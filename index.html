@@ -7,12 +7,16 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Monitoring Quick Count Cibuntu</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Plus Jakarta Sans -->
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <!-- ChartJS Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
       html,
       body {
@@ -32,6 +36,7 @@
         color: white;
       }
 
+      /* Scrollbar removal for internal native look */
       .app-container::-webkit-scrollbar {
         display: none;
       }
@@ -44,6 +49,7 @@
         overflow-x: hidden;
       }
 
+      /* Premium Card Glassmorphism effect */
       .card-gofood {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -56,6 +62,7 @@
         border-color: rgba(59, 130, 246, 0.3);
       }
 
+      /* Sleek Banner Design */
       .banner-blue {
         background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
         border-radius: 24px;
@@ -73,6 +80,7 @@
         border-radius: 50%;
       }
 
+      /* Custom fade-in animations */
       .animate-up {
         animation: fadeInUp 0.5s ease-out forwards;
       }
@@ -90,15 +98,15 @@
   </head>
 
   <body class="bg-[#0f172a] text-white">
-    <!-- CONTAINER SCROLL INTERNAL -->
+    <!-- APP CONTAINER INTERNAL SCROLL -->
     <div
       class="app-container w-full p-4 sm:p-6 md:p-8 flex flex-col justify-between"
     >
-      <!-- WRAPPER UTAMA -->
+      <!-- MAIN WRAPPER -->
       <div class="w-full max-w-7xl mx-auto space-y-6 flex-grow flex flex-col">
-        <!-- STATUS KONEKSI (Indikator Server GitHub -> GAS) -->
+        <!-- Live Server Connection Status Indicator -->
         <div
-          class="flex items-center justify-between bg-white/[0.02] border border-white/5 px-4 py-2 rounded-xl text-xs"
+          class="flex items-center justify-between bg-white/[0.02] border border-white/5 px-4 py-2.5 rounded-xl text-xs"
         >
           <div class="flex items-center gap-2">
             <span class="relative flex h-2 w-2">
@@ -112,39 +120,38 @@
               ></span>
             </span>
             <span id="conn-text" class="text-slate-400 font-semibold"
-              >Mode API: Terhubung ke Server</span
+              >Mode API: Menghubungkan...</span
             >
           </div>
           <div id="conn-time" class="text-slate-500 text-[10px]">Real-time</div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAMPILAN 1: MENU UTAMA (HOME)              -->
-        <!-- ========================================== -->
+        <!-- PAGE 1: MAIN HOME DASHBOARD -->
         <div
           id="page-home"
           class="w-full max-w-3xl mx-auto space-y-6 animate-up flex-grow"
         >
-          <!-- Banner Utama Atas -->
+          <!-- Hero Section Banner -->
           <div
             class="banner-blue p-6 md:p-10 shadow-xl text-center md:text-left relative flex flex-col md:flex-row items-center justify-between gap-6"
           >
             <div class="z-10 w-full md:w-auto">
               <span
-                class="bg-blue-500/40 text-blue-100 text-[10px] md:text-xs px-3 md:px-4 py-1.5 rounded-full font-bold uppercase tracking-wider border border-white/10 inline-block mb-3 md:mb-0"
+                class="bg-blue-500/40 text-blue-100 text-[10px] md:text-xs px-3 md:px-4 py-1.5 rounded-full font-bold uppercase tracking-wider border border-white/10 inline-block mb-3"
               >
                 📍 PEMILIHAN DESA CIBUNTU
               </span>
               <h2
-                class="text-2xl md:text-3xl font-extrabold text-white mt-2 mb-2 tracking-wide"
+                class="text-2xl md:text-3xl font-extrabold text-white tracking-wide"
               >
                 DASHBOARD INFORMASI
               </h2>
-              <p class="text-blue-100/80 text-xs md:text-sm italic">
+              <p class="text-blue-100/80 text-xs md:text-sm italic mt-1.5">
                 "Harta sejati adalah persaudaraan, sukseskan pemilu yang damai."
               </p>
             </div>
 
+            <!-- Total Ingressed Votes Dynamic Badge -->
             <div
               class="z-10 bg-black/30 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center w-full md:w-auto"
             >
@@ -162,7 +169,7 @@
             </div>
           </div>
 
-          <!-- Micro-Grid Statistik Tambahan -->
+          <!-- Dynamic Statistics Mini Grid -->
           <div class="grid grid-cols-3 gap-3 md:gap-4">
             <div
               class="bg-white/[0.02] border border-white/5 rounded-2xl p-4 text-center"
@@ -211,7 +218,7 @@
             </div>
           </div>
 
-          <!-- Grid Menu Kotak/Ikon Bulat -->
+          <!-- Menu Navigation Grid -->
           <div
             class="bg-white/[0.02] rounded-[24px] p-6 md:p-10 border border-white/5 shadow-2xl"
           >
@@ -224,6 +231,7 @@
             <div
               class="grid grid-cols-3 md:grid-cols-4 gap-y-8 gap-x-4 text-center"
             >
+              <!-- Quick Count Menu -->
               <button
                 onclick="switchPage('quick-count')"
                 class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
@@ -239,6 +247,7 @@
                 >
               </button>
 
+              <!-- Profile Menu -->
               <button
                 onclick="switchPage('profil')"
                 class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
@@ -254,6 +263,7 @@
                 >
               </button>
 
+              <!-- Vision Mission Menu -->
               <button
                 onclick="switchPage('visi-misi')"
                 class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
@@ -269,10 +279,11 @@
                 >
               </button>
 
+              <!-- Custom Help Info Action -->
               <button
                 onclick="
                   showInfoModal(
-                    'Dashboard Real-Time Quick Count Desa Cibuntu 2026. Aplikasi ini terhubung langsung ke Google Sheets API secara real-time via REST Service.',
+                    'Dashboard Real-Time Quick Count Desa Cibuntu 2026. Aplikasi ini terhubung langsung ke REST API Google Sheets via Google Apps Script milik panitia secara transparan.',
                   )
                 "
                 class="col-span-3 md:col-span-1 flex flex-col items-center gap-3 group active:scale-95 transition-transform mt-4 md:mt-0"
@@ -291,9 +302,7 @@
           </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAMPILAN 2: HALAMAN GRAFIK QUICK COUNT     -->
-        <!-- ========================================== -->
+        <!-- PAGE 2: QUICK COUNT GRAPH VISUALIZATION -->
         <div
           id="page-quick-count"
           class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
@@ -315,9 +324,11 @@
             </button>
           </div>
 
+          <!-- Chart & Standings List Dual Column Layout -->
           <div
             class="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start"
           >
+            <!-- Chart Container -->
             <div
               class="md:col-span-7 lg:col-span-8 card-gofood p-5 md:p-8 w-full"
             >
@@ -334,6 +345,7 @@
               </div>
             </div>
 
+            <!-- Injected Candidate Votes Standings List -->
             <div
               class="md:col-span-5 lg:col-span-4 flex flex-col gap-3 md:gap-4 w-full"
               id="candidate-list"
@@ -345,9 +357,7 @@
           </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAMPILAN 3: HALAMAN PROFIL                 -->
-        <!-- ========================================== -->
+        <!-- PAGE 3: CANDIDATES LIST PROFILE GRID -->
         <div
           id="page-profil"
           class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
@@ -379,9 +389,7 @@
           </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAMPILAN 4: HALAMAN VISI & MISI            -->
-        <!-- ========================================== -->
+        <!-- PAGE 4: DETAILED VISION & MISSION -->
         <div
           id="page-visi-misi"
           class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
@@ -405,11 +413,15 @@
             class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
             id="visi-misi-container"
           >
-            <!-- Di-render oleh Javascript -->
+            <div
+              class="col-span-full text-slate-500 text-center py-10 card-gofood"
+            >
+              Memuat visi misi kontestan...
+            </div>
           </div>
         </div>
 
-        <!-- FOOTER CUSTOM BRANDING PERSONAL HERMAWAN -->
+        <!-- Footer Section (Personal Branding Hermawan) -->
         <footer
           class="pt-6 mt-8 border-t border-slate-800/80 text-center text-slate-500 text-[11px] md:text-sm tracking-wide w-full pb-2"
         >
@@ -422,7 +434,7 @@
       </div>
     </div>
 
-    <!-- POP-UP MODAL DETAIL LENGKAP PROFIL/VISI MISI -->
+    <!-- MODAL 1: CANDIDATE DETAIL PROFILE -->
     <div
       id="profile-modal"
       class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
@@ -476,7 +488,7 @@
       </div>
     </div>
 
-    <!-- POP-UP MODAL INFORMASI / BANTUAN KUSTOM -->
+    <!-- MODAL 2: CUSTOM INFO / ALERTS -->
     <div
       id="info-modal"
       class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
@@ -513,17 +525,18 @@
       </div>
     </div>
 
-    <!-- LOGIKA PEMROSESAN UTAMA DASHBOARD -->
+    <!-- APP LOGIC SCRIPTS -->
     <script>
-      // ==========================================
-      // TEMPELKAN URL DEPLOYMENT WEB APP GAS ANDA DISINI!
-      // ==========================================
-      const GAS_API_URL = "PASANG_URL_WEB_APP_ANDA_DISINI";
+      // =========================================================================
+      // DENGAN TERINTEGRASI LANGSUNG DENGAN API WEB APP GOOGLE APPS SCRIPT ANDA
+      // =========================================================================
+      const GAS_API_URL =
+        "https://script.google.com/macros/s/AKfycbxy1WFNw-IJrTKIMYCBcBWxm66_FPfh-xpKyW70G7lP7kNFCirSBFXQ_wg-j45lHoVZZQ/exec";
 
       let myChart;
       let localDataCache = [];
 
-      // Sistem Perpindahan Halaman Konten
+      // Internal Client Router for page tabs
       function switchPage(pageId) {
         document.getElementById("page-home").classList.add("hidden");
         document.getElementById("page-quick-count").classList.add("hidden");
@@ -537,6 +550,7 @@
             .getElementById("page-quick-count")
             .classList.remove("hidden");
 
+          // Reset Chart animation to look spectacular on enter
           if (myChart) {
             myChart.resize();
             const currentData = [...myChart.data.datasets[0].data];
@@ -557,9 +571,11 @@
           document.getElementById("page-visi-misi").classList.remove("hidden");
         }
 
+        // Always scroll up inside page container
         document.querySelector(".app-container").scrollTo(0, 0);
       }
 
+      // Configure ChartJS canvas settings
       function initChart() {
         const ctx = document.getElementById("mainChart").getContext("2d");
         const isDesktop = window.innerWidth >= 768;
@@ -603,23 +619,17 @@
         });
       }
 
+      // Asynchronous API call handler
       function fetchData() {
-        // Cek apakah user telah memasang URL API Web App aslinya
-        if (!GAS_API_URL || GAS_API_URL === "PASANG_URL_WEB_APP_ANDA_DISINI") {
-          console.warn(
-            "Aplikasi berjalan dalam Demo Mode (URL API belum dipasang).",
-          );
-          setConnectionStatus("Demo Mode", "amber");
-          loadDemoMockData();
-          return;
-        }
-
         setConnectionStatus("Memuat Data...", "blue");
 
+        // Execute asynchronous HTTP GET query directly to GAS deployment
         fetch(GAS_API_URL)
           .then((response) => {
             if (!response.ok) {
-              throw new Error("Gagal mengambil data dari Google Web App API");
+              throw new Error(
+                "Gagal mengambil data dari Google Apps Script Web App.",
+              );
             }
             return response.json();
           })
@@ -628,19 +638,22 @@
               setConnectionStatus("Terhubung", "emerald");
               renderUI(res);
             } else {
-              throw new Error(res.message || "Struktur Data API Error");
+              throw new Error(
+                res.message || "Terdapat kegagalan struktur data backend API.",
+              );
             }
           })
           .catch((error) => {
-            console.error("Terjadi masalah pengambilan data dari API:", error);
+            console.error("Kesalahan sinkronisasi API:", error);
             setConnectionStatus("Offline / Demo Mode", "red");
             showInfoModal(
-              "Koneksi gagal ke API GAS. Menampilkan visualisasi data demo lokal.",
+              "Koneksi gagal atau terhambat CORS ke server. Sistem menampilkan data demo lokal sementara.",
             );
             loadDemoMockData();
           });
       }
 
+      // Helper to update global ping lights
       function setConnectionStatus(text, colorTheme) {
         const ping = document.getElementById("conn-ping");
         const dot = document.getElementById("conn-dot");
@@ -676,6 +689,7 @@
         }
       }
 
+      // Offline Local Mock dataset
       function loadDemoMockData() {
         const mockResponse = {
           statistik: {
@@ -722,10 +736,11 @@
         renderUI(mockResponse);
       }
 
+      // Rendering logic
       function renderUI(res) {
         localDataCache = res.kandidat;
 
-        // Render Statistik Utama & Tambahan
+        // Render main aggregated indicators
         document.getElementById("home-total-suara").innerText =
           res.statistik.totalSah.toLocaleString("id-ID");
         document.getElementById("stat-dpt").innerText =
@@ -735,16 +750,18 @@
         document.getElementById("stat-golput").innerText =
           res.statistik.totalGolput.toLocaleString("id-ID");
 
-        // Perbarui Chart.js
+        // Update ChartJS data properties
         myChart.data.labels = res.kandidat.map((k) => k.nama);
         myChart.data.datasets[0].data = res.kandidat.map(() => 0);
         myChart.update("none");
 
+        // Trigger transition layout
         setTimeout(() => {
           myChart.data.datasets[0].data = res.kandidat.map((k) => k.persentase);
           myChart.update();
         }, 150);
 
+        // Compile structural HTML elements dynamically
         let listHtml = "";
         let photoHtml = "";
         let visiMisiHtml = "";
@@ -770,12 +787,13 @@
             "text-pink-400",
           ];
 
-          // Gunakan visi misi dinamis dari API, fallback ke default lokal jika kolom sheet kosong
+          // Use dynamic Vision and Mission from API if present, otherwise fallback
           const visiTeks =
             k.visiMisi ||
             defaultVisiMisi[index] ||
             "Berkomitmen penuh mengabdi demi kemaslahatan, keterbukaan, dan kemajuan bersama warga masyarakat Desa Cibuntu.";
 
+          // Standings lists markup
           listHtml += `
             <div class="card-gofood p-4 md:p-6 flex justify-between items-center bg-white/[0.01] w-full animate-up">
                 <div class="flex items-center gap-3 md:gap-5 min-w-0">
@@ -788,6 +806,7 @@
                 </div>
             </div>`;
 
+          // Image grid markup
           photoHtml += `
             <div onclick="openModal(${index}, '${visiTeks.replace(/'/g, "\\'")}')" class="card-gofood p-4 md:p-6 text-center cursor-pointer hover:bg-white/5 transition-all bg-white/[0.01] flex flex-col justify-center h-full w-full animate-up">
                 <div class="relative w-20 h-20 md:w-32 md:h-32 mx-auto mb-4">
@@ -801,6 +820,7 @@
                 <span class="text-[10px] md:text-xs text-blue-400 bg-blue-500/10 px-3 py-1.5 md:py-2 rounded-lg border border-blue-500/20 inline-block mt-4 hover:bg-blue-500/20 transition-colors">Lihat Profil</span>
             </div>`;
 
+          // Vision statements markup
           visiMisiHtml += `
             <div class="card-gofood p-5 md:p-8 bg-white/[0.01] flex flex-col h-full w-full animate-up">
                 <div class="flex items-center gap-3 pb-3 md:pb-4 border-b border-white/5 mb-3 md:mb-5">
@@ -814,12 +834,13 @@
             </div>`;
         });
 
+        // Inject compiled string structures to DOM
         document.getElementById("candidate-list").innerHTML = listHtml;
         document.getElementById("photo-grid").innerHTML = photoHtml;
         document.getElementById("visi-misi-container").innerHTML = visiMisiHtml;
       }
 
-      // Penanganan Modal Profil Calon
+      // Candidate profile details modal control
       function openModal(index, visiTeks) {
         const kandidat = localDataCache[index];
         if (!kandidat) return;
@@ -850,7 +871,7 @@
         }, 200);
       }
 
-      // Penanganan Modal Informasi Bantuan Kustom (Anti-Alert)
+      // Info/Bantuan dialog control
       function showInfoModal(text) {
         document.getElementById("info-modal-text").innerText = text;
         const modal = document.getElementById("info-modal");
@@ -871,11 +892,13 @@
         }, 200);
       }
 
+      // Bootstrap and configuration on initialize
       window.onload = () => {
         initChart();
         fetchData();
       };
 
+      // Handle structural screen resize adjustments nicely
       window.addEventListener("resize", () => {
         if (myChart) {
           const isDesktop = window.innerWidth >= 768;
