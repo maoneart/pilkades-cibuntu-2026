@@ -1,9 +1,736 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Pilkades Cibuntu 2026</title>
-</head>
-<body>
-  <h1>Website Berhasil Online 🚀</h1>
-</body>
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Monitoring Quick Count Cibuntu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* FIX AMPUH ANTI-PUTIH & ANTI-JUMPING */
+      html,
+      body {
+        background-color: #0f172a !important;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+        touch-action: none;
+      }
+      body {
+        /* Jadikan body sebagai Flex container agar banner GAS tidak merusak layout */
+        display: flex;
+        flex-direction: column;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        color: white;
+      }
+
+      /* Hilangkan scrollbar agar murni seperti Aplikasi Native */
+      .app-container::-webkit-scrollbar {
+        display: none;
+      }
+      .app-container {
+        flex: 1; /* Mengisi sisa ruang di bawah banner GAS secara otomatis */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        touch-action: pan-y;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      /* Glassmorphism Card Style */
+      .card-gofood {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border-radius: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .card-gofood:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+
+      /* Banner Gradient Style */
+      .banner-blue {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .banner-blue::before {
+        content: "";
+        position: absolute;
+        top: -20%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .animate-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#0f172a] text-white">
+    <!-- CONTAINER SCROLL INTERNAL -->
+    <div
+      class="app-container w-full p-4 sm:p-6 md:p-8 flex flex-col justify-between"
+    >
+      <!-- WRAPPER UTAMA -->
+      <div class="w-full max-w-7xl mx-auto space-y-6 flex-grow flex flex-col">
+        <!-- ========================================== -->
+        <!-- TAMPILAN 1: MENU UTAMA (HOME)              -->
+        <!-- ========================================== -->
+        <div
+          id="page-home"
+          class="w-full max-w-3xl mx-auto space-y-6 animate-up flex-grow"
+        >
+          <!-- Banner Utama Atas -->
+          <div
+            class="banner-blue p-6 md:p-10 shadow-xl text-center md:text-left relative flex flex-col md:flex-row items-center justify-between gap-6"
+          >
+            <div class="z-10 w-full md:w-auto">
+              <span
+                class="bg-blue-500/40 text-blue-100 text-[10px] md:text-xs px-3 md:px-4 py-1.5 rounded-full font-bold uppercase tracking-wider border border-white/10 inline-block mb-3 md:mb-0"
+              >
+                📍 PEMILIHAN DESA CIBUNTU
+              </span>
+              <h2
+                class="text-2xl md:text-3xl font-extrabold text-white mt-2 mb-2 tracking-wide"
+              >
+                DASHBOARD INFORMASI
+              </h2>
+              <p class="text-blue-100/80 text-xs md:text-sm italic">
+                "Harta sejati adalah persaudaraan, sukseskan pemilu yang damai."
+              </p>
+            </div>
+
+            <div
+              class="z-10 bg-black/30 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center w-full md:w-auto"
+            >
+              <p
+                class="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1"
+              >
+                Total Suara Masuk
+              </p>
+              <div
+                class="text-2xl md:text-4xl font-black text-white"
+                id="home-total-suara"
+              >
+                0
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid Menu Kotak/Ikon Bulat -->
+          <div
+            class="bg-white/[0.02] rounded-[24px] p-6 md:p-10 border border-white/5 shadow-2xl"
+          >
+            <p
+              class="text-[11px] md:text-sm font-bold uppercase text-slate-400 tracking-widest mb-8 text-center"
+            >
+              Silahkan Pilih Menu Layanan
+            </p>
+
+            <div
+              class="grid grid-cols-3 md:grid-cols-4 gap-y-8 gap-x-4 text-center"
+            >
+              <button
+                onclick="switchPage('quick-count')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-blue-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-blue-600/30 group-hover:bg-blue-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  📊
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Quick Count</span
+                >
+              </button>
+
+              <button
+                onclick="switchPage('profil')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-emerald-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  👤
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Profil</span
+                >
+              </button>
+
+              <button
+                onclick="switchPage('visi-misi')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-amber-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-amber-600/30 group-hover:bg-amber-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  📜
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Visi Misi</span
+                >
+              </button>
+
+              <button
+                onclick="
+                  showInfoModal(
+                    'Dashboard Real-Time Quick Count Desa Cibuntu 2026. Data diupdate secara aman & berkala langsung dari Google Spreadsheet Panitia Pemilihan.',
+                  )
+                "
+                class="col-span-3 md:col-span-1 flex flex-col items-center gap-3 group active:scale-95 transition-transform mt-4 md:mt-0"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-700 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-slate-700/30 group-hover:bg-slate-600 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  ℹ️
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-300 tracking-wide"
+                  >Bantuan</span
+                >
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 2: HALAMAN GRAFIK QUICK COUNT     -->
+        <!-- ========================================== -->
+        <div
+          id="page-quick-count"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 gap-4"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="w-full sm:w-auto justify-center text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-2.5 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <button
+              onclick="fetchData()"
+              class="w-full sm:w-auto justify-center text-xs md:text-sm bg-white hover:bg-slate-200 text-slate-900 px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg"
+            >
+              🔄 Refresh Data
+            </button>
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start"
+          >
+            <div
+              class="md:col-span-7 lg:col-span-8 card-gofood p-5 md:p-8 w-full"
+            >
+              <div class="flex items-center gap-2 mb-6">
+                <div class="w-2 h-5 md:h-6 bg-blue-500 rounded-sm"></div>
+                <h3
+                  class="text-sm md:text-base font-bold text-slate-300 uppercase tracking-wider"
+                >
+                  Grafik Hasil Suara (%)
+                </h3>
+              </div>
+              <div class="relative h-[280px] md:h-[450px] w-full">
+                <canvas id="mainChart"></canvas>
+              </div>
+            </div>
+
+            <div
+              class="md:col-span-5 lg:col-span-4 flex flex-col gap-3 md:gap-4 w-full"
+              id="candidate-list"
+            >
+              <div class="text-slate-500 text-center py-10 card-gofood w-full">
+                Memuat data perolehan...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 3: HALAMAN PROFIL                 -->
+        <!-- ========================================== -->
+        <div
+          id="page-profil"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <span
+              class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider px-2"
+              >Profil Kontestan</span
+            >
+          </div>
+
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            id="photo-grid"
+          >
+            <div
+              class="col-span-2 md:col-span-4 text-slate-500 text-center py-10 card-gofood"
+            >
+              Memuat profil kontestan...
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 4: HALAMAN VISI & MISI            -->
+        <!-- ========================================== -->
+        <div
+          id="page-visi-misi"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <span
+              class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider px-2"
+              >Visi & Misi</span
+            >
+          </div>
+
+          <div
+            class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
+            id="visi-misi-container"
+          >
+            <!-- Di-render oleh Javascript -->
+          </div>
+        </div>
+
+        <!-- FOOTER CUSTOM BRANDING PERSONAL HERMAWAN -->
+        <footer
+          class="pt-6 mt-8 border-t border-slate-800/80 text-center text-slate-500 text-[11px] md:text-sm tracking-wide w-full pb-2"
+        >
+          <p>
+            Copyright &copy; 2026
+            <span class="text-blue-400 font-semibold">Hermawan</span>. All
+            Rights Reserved.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <!-- END OF APP CONTAINER -->
+
+    <!-- POP-UP MODAL DETAIL LENGKAP PROFIL/VISI MISI -->
+    <div
+      id="profile-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
+    >
+      <div
+        class="card-gofood bg-slate-900/95 border border-white/20 p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl space-y-4 relative transform scale-95 transition-transform"
+      >
+        <button
+          onclick="closeModal()"
+          class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl font-semibold leading-none"
+        >
+          &times;
+        </button>
+        <div class="text-center mt-2">
+          <img
+            id="modal-img"
+            src=""
+            class="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto object-cover border-4 border-blue-500 shadow-xl"
+          />
+          <h3
+            id="modal-nama"
+            class="text-xl md:text-2xl font-bold mt-4 text-white"
+          >
+            Nama Kandidat
+          </h3>
+          <p
+            id="modal-no"
+            class="text-blue-400 font-bold text-xs md:text-sm mt-1 bg-blue-500/10 inline-block px-3 py-1 rounded-full border border-blue-500/20"
+          >
+            Kandidat No. 0
+          </p>
+        </div>
+        <div
+          class="border-t border-white/10 pt-4 mt-4 text-sm text-slate-300 bg-black/40 p-5 rounded-2xl space-y-2"
+        >
+          <p
+            class="font-bold text-white uppercase tracking-wider text-blue-300 text-xs md:text-sm mb-2"
+          >
+            Visi & Misi Utama:
+          </p>
+          <p
+            id="modal-visi-teks"
+            class="italic leading-relaxed text-slate-300 text-xs md:text-sm"
+          >
+            "Teks Visi Misi"
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- POP-UP MODAL INFORMASI / BANTUAN KUSTOM (ANTI-ALERT) -->
+    <div
+      id="info-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
+    >
+      <div
+        class="card-gofood bg-slate-900/95 border border-white/20 p-6 max-w-sm w-full shadow-2xl space-y-4 relative transform scale-95 transition-transform"
+      >
+        <button
+          onclick="closeInfoModal()"
+          class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl font-semibold leading-none"
+        >
+          &times;
+        </button>
+        <div class="flex flex-col items-center text-center space-y-3">
+          <div
+            class="w-12 h-12 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-2xl"
+          >
+            ℹ️
+          </div>
+          <h3 class="text-lg font-bold text-white">Informasi Aplikasi</h3>
+          <p
+            id="info-modal-text"
+            class="text-xs md:text-sm text-slate-300 leading-relaxed"
+          ></p>
+        </div>
+        <div class="pt-2">
+          <button
+            onclick="closeInfoModal()"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl text-xs md:text-sm transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIKA PEMROSESAN UTAMA DASHBOARD -->
+    <script>
+      let myChart;
+      let localDataCache = [];
+
+      // Sistem Perpindahan Halaman Konten (Tab Router)
+      function switchPage(pageId) {
+        document.getElementById("page-home").classList.add("hidden");
+        document.getElementById("page-quick-count").classList.add("hidden");
+        document.getElementById("page-profil").classList.add("hidden");
+        document.getElementById("page-visi-misi").classList.add("hidden");
+
+        if (pageId === "home") {
+          document.getElementById("page-home").classList.remove("hidden");
+        } else if (pageId === "quick-count") {
+          document
+            .getElementById("page-quick-count")
+            .classList.remove("hidden");
+
+          // FIX ANIMASI ULTRA STABIL: Selesaikan resize layout & trigger ulang animasi Chart.js
+          if (myChart) {
+            myChart.resize(); // Hitung ulang pixel kontainer canvas versi desktop/seluler
+            const currentData = [...myChart.data.datasets[0].data];
+
+            if (currentData.length > 0) {
+              // Tarik batang grafik ke 0 secara instan tanpa animasi terlebih dahulu
+              myChart.data.datasets[0].data = currentData.map(() => 0);
+              myChart.update("none");
+
+              // Naikkan batang dengan efek transisi yang dramatis setelah jeda sinkronisasi browser
+              setTimeout(() => {
+                myChart.data.datasets[0].data = currentData;
+                myChart.update();
+              }, 150);
+            }
+          }
+        } else if (pageId === "profil") {
+          document.getElementById("page-profil").classList.remove("hidden");
+        } else if (pageId === "visi-misi") {
+          document.getElementById("page-visi-misi").classList.remove("hidden");
+        }
+
+        // Auto scroll to top container saat ganti menu
+        document.querySelector(".app-container").scrollTo(0, 0);
+      }
+
+      function initChart() {
+        const ctx = document.getElementById("mainChart").getContext("2d");
+        const isDesktop = window.innerWidth >= 768;
+
+        myChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                data: [],
+                backgroundColor: ["#2563eb", "#10b981", "#f59e0b", "#ec4899"],
+                borderRadius: isDesktop ? 12 : 6,
+                barThickness: isDesktop ? 60 : 28,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  color: "#64748b",
+                  font: { size: isDesktop ? 12 : 10 },
+                },
+                grid: { color: "#1e293b" },
+              },
+              x: {
+                ticks: {
+                  color: "#f8fafc",
+                  font: { size: isDesktop ? 14 : 11, weight: "bold" },
+                },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      function fetchData() {
+        if (typeof google === "undefined") {
+          // Gunakan tiruan data lokal jika dijalankan di luar ekosistem GAS (misal, pengujian lokal)
+          const mockResponse = {
+            totalSah: 4850,
+            kandidat: [
+              {
+                nama: "H. Ahmad Fauzi",
+                suara: 1850,
+                persentase: 38.1,
+                foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+              },
+              {
+                nama: "Drs. M. Ridwan",
+                suara: 1420,
+                persentase: 29.3,
+                foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+              },
+              {
+                nama: "Siti Aminah, S.E.",
+                suara: 980,
+                persentase: 20.2,
+                foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+              },
+              {
+                nama: "Budi Santoso",
+                suara: 600,
+                persentase: 12.4,
+                foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+              },
+            ],
+          };
+          renderUI(mockResponse);
+          return;
+        }
+
+        // Integrasi native aman ke backend gs
+        google.script.run
+          .withSuccessHandler((res) => {
+            renderUI(res);
+          })
+          .getDataDashboard();
+      }
+
+      // Membagi fungsi render agar kode lebih Clean, Modular, dan Terstruktur
+      function renderUI(res) {
+        localDataCache = res.kandidat;
+
+        document.getElementById("home-total-suara").innerText =
+          res.totalSah.toLocaleString("id-ID");
+
+        myChart.data.labels = res.kandidat.map((k) => k.nama);
+
+        // Animasi inisial yang spektakuler saat data pertama kali dimuat
+        myChart.data.datasets[0].data = res.kandidat.map(() => 0);
+        myChart.update("none");
+
+        setTimeout(() => {
+          myChart.data.datasets[0].data = res.kandidat.map((k) => k.persentase);
+          myChart.update();
+        }, 150);
+
+        let listHtml = "";
+        let photoHtml = "";
+        let visiMisiHtml = "";
+
+        const visiMisiData = [
+          "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
+          "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
+          "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
+          "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
+        ];
+
+        res.kandidat.forEach((k, index) => {
+          const colors = [
+            "bg-blue-500",
+            "bg-emerald-500",
+            "bg-amber-500",
+            "bg-pink-500",
+          ];
+          const textColors = [
+            "text-blue-400",
+            "text-emerald-400",
+            "text-amber-400",
+            "text-pink-400",
+          ];
+          const visiTeks =
+            visiMisiData[index] ||
+            "Berkomitmen penuh mengabdi demi kemaslahatan, keterbukaan, dan kemajuan bersama warga masyarakat Desa Cibuntu.";
+
+          listHtml += `
+                    <div class="card-gofood p-4 md:p-6 flex justify-between items-center bg-white/[0.01] w-full animate-up">
+                        <div class="flex items-center gap-3 md:gap-5 min-w-0">
+                            <div class="w-8 h-8 md:w-12 md:h-12 ${colors[index]} rounded-lg md:rounded-xl flex items-center justify-center font-extrabold text-sm md:text-lg text-white shadow-md">${index + 1}</div>
+                            <span class="font-bold text-sm md:text-lg text-white truncate max-w-[140px] md:max-w-full">${k.nama}</span>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-lg md:text-2xl font-black ${textColors[index]}">${k.persentase.toFixed(1)}%</div>
+                            <div class="text-slate-500 text-[10px] md:text-sm mt-0.5">${k.suara.toLocaleString("id-ID")} Suara</div>
+                        </div>
+                    </div>`;
+
+          photoHtml += `
+                    <div onclick="openModal(${index}, '${visiTeks.replace(/'/g, "\\'")}')" class="card-gofood p-4 md:p-6 text-center cursor-pointer hover:bg-white/5 transition-all bg-white/[0.01] flex flex-col justify-center h-full w-full animate-up">
+                        <div class="relative w-20 h-20 md:w-32 md:h-32 mx-auto mb-4">
+                            <img src="${k.foto}" class="w-full h-full object-cover rounded-2xl md:rounded-3xl border border-white/10 shadow-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                            <div class="absolute -bottom-2 -right-2 w-7 h-7 md:w-10 md:h-10 ${colors[index]} rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs md:text-base text-white shadow-lg">
+                                ${index + 1}
+                            </div>
+                        </div>
+                        <h4 class="text-sm md:text-lg font-bold text-white truncate px-1 mt-2">${k.nama}</h4>
+                        <p class="${textColors[index]} font-black text-sm md:text-xl mt-1">${k.persentase.toFixed(1)}%</p>
+                        <span class="text-[10px] md:text-xs text-blue-400 bg-blue-500/10 px-3 py-1.5 md:py-2 rounded-lg border border-blue-500/20 inline-block mt-4 hover:bg-blue-500/20 transition-colors">Lihat Profil</span>
+                    </div>`;
+
+          visiMisiHtml += `
+                    <div class="card-gofood p-5 md:p-8 bg-white/[0.01] flex flex-col h-full w-full animate-up">
+                        <div class="flex items-center gap-3 pb-3 md:pb-4 border-b border-white/5 mb-3 md:mb-5">
+                            <div class="w-8 h-8 md:w-10 md:h-10 ${colors[index]} rounded-lg md:rounded-xl font-bold text-sm md:text-base text-white flex items-center justify-center shadow-md">${index + 1}</div>
+                            <h4 class="text-sm md:text-xl font-bold text-white">${k.nama}</h4>
+                        </div>
+                        <div class="text-xs md:text-base text-slate-300 leading-relaxed bg-black/30 p-4 md:p-6 rounded-2xl border border-white/5 flex-grow">
+                            <p class="text-white font-bold text-[10px] md:text-xs uppercase tracking-wider mb-2 md:mb-3 ${textColors[index]}">Visi & Misi Calon:</p>
+                            "${visiTeks}"
+                        </div>
+                    </div>`;
+        });
+
+        document.getElementById("candidate-list").innerHTML = listHtml;
+        document.getElementById("photo-grid").innerHTML = photoHtml;
+        document.getElementById("visi-misi-container").innerHTML = visiMisiHtml;
+      }
+
+      // Penanganan Modal Profil Calon
+      function openModal(index, visiTeks) {
+        const kandidat = localDataCache[index];
+        if (!kandidat) return;
+
+        document.getElementById("modal-img").src = kandidat.foto;
+        document.getElementById("modal-nama").innerText = kandidat.nama;
+        document.getElementById("modal-no").innerText =
+          `Kandidat Nomor Urut 0${index + 1}`;
+        document.getElementById("modal-visi-teks").innerText = `"${visiTeks}"`;
+
+        const modal = document.getElementById("profile-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        setTimeout(
+          () => modal.firstElementChild.classList.remove("scale-95"),
+          10,
+        );
+      }
+
+      function closeModal() {
+        const modal = document.getElementById("profile-modal");
+        modal.firstElementChild.classList.add("scale-95");
+        setTimeout(() => {
+          modal.classList.remove("flex");
+          modal.classList.add("hidden");
+        }, 200);
+      }
+
+      // Penanganan Modal Informasi Bantuan Kustom
+      function showInfoModal(text) {
+        document.getElementById("info-modal-text").innerText = text;
+        const modal = document.getElementById("info-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        setTimeout(
+          () => modal.firstElementChild.classList.remove("scale-95"),
+          10,
+        );
+      }
+
+      function closeInfoModal() {
+        const modal = document.getElementById("info-modal");
+        modal.firstElementChild.classList.add("scale-95");
+        setTimeout(() => {
+          modal.classList.remove("flex");
+          modal.classList.add("hidden");
+        }, 200);
+      }
+
+      window.onload = () => {
+        initChart();
+        fetchData();
+      };
+
+      window.addEventListener("resize", () => {
+        if (myChart) {
+          const isDesktop = window.innerWidth >= 768;
+          myChart.options.scales.x.ticks.font.size = isDesktop ? 14 : 11;
+          myChart.options.scales.y.ticks.font.size = isDesktop ? 12 : 10;
+          myChart.data.datasets[0].barThickness = isDesktop ? 60 : 28;
+          myChart.update("none");
+        }
+      });
+    </script>
+  </body>
 </html>
