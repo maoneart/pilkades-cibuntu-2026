@@ -535,47 +535,68 @@
       }
 
       function fetchData() {
-        if (typeof google === "undefined") {
-          // Gunakan tiruan data lokal jika dijalankan di luar ekosistem GAS (misal, pengujian lokal)
-          const mockResponse = {
-            totalSah: 4850,
-            kandidat: [
-              {
-                nama: "H. Ahmad Fauzi",
-                suara: 1850,
-                persentase: 38.1,
-                foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-              },
-              {
-                nama: "Drs. M. Ridwan",
-                suara: 1420,
-                persentase: 29.3,
-                foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-              },
-              {
-                nama: "Siti Aminah, S.E.",
-                suara: 980,
-                persentase: 20.2,
-                foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-              },
-              {
-                nama: "Budi Santoso",
-                suara: 600,
-                persentase: 12.4,
-                foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-              },
-            ],
-          };
-          renderUI(mockResponse);
+        const GAS_ENDPOINT =
+          "https://script.google.com/macros/s/AKfycbxy1WFNw-IJrTKIMYCBcBWxm66_FPfh-xpKyW70G7lP7kNFCirSBFXQ_wg-j45lHoVZZQ/exec";
+
+        if (
+          typeof google !== "undefined" &&
+          google.script &&
+          google.script.run
+        ) {
+          // Jika dijalankan sebagai HTML service di Google Apps Script
+          google.script.run
+            .withSuccessHandler((res) => {
+              renderUI(res);
+            })
+            .getDataDashboard();
           return;
         }
 
-        // Integrasi native aman ke backend gs
-        google.script.run
-          .withSuccessHandler((res) => {
+        // Jika app berjalan di browser biasa / dari file lokal, gunakan endpoint JSON GAS
+        fetch(GAS_ENDPOINT)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Gagal mengambil data dari GAS");
+            }
+            return response.json();
+          })
+          .then((res) => {
             renderUI(res);
           })
-          .getDataDashboard();
+          .catch((error) => {
+            console.warn(error);
+
+            const mockResponse = {
+              totalSah: 4850,
+              kandidat: [
+                {
+                  nama: "H. Ahmad Fauzi",
+                  suara: 1850,
+                  persentase: 38.1,
+                  foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+                },
+                {
+                  nama: "Drs. M. Ridwan",
+                  suara: 1420,
+                  persentase: 29.3,
+                  foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+                },
+                {
+                  nama: "Siti Aminah, S.E.",
+                  suara: 980,
+                  persentase: 20.2,
+                  foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+                },
+                {
+                  nama: "Budi Santoso",
+                  suara: 600,
+                  persentase: 12.4,
+                  foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+                },
+              ],
+            };
+            renderUI(mockResponse);
+          });
       }
 
       // Membagi fungsi render agar kode lebih Clean, Modular, dan Terstruktur
