@@ -307,21 +307,68 @@
           id="page-quick-count"
           class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
         >
+          <!-- Navigation header with dropdown filter -->
           <div
-            class="flex flex-col sm:flex-row justify-between items-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 gap-4"
+            class="flex flex-col md:flex-row justify-between items-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 gap-4"
           >
             <button
               onclick="switchPage('home')"
-              class="w-full sm:w-auto justify-center text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-2.5 rounded-xl border border-blue-500/20 transition-all"
+              class="w-full md:w-auto justify-center text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-2.5 rounded-xl border border-blue-500/20 transition-all"
             >
               ⬅ Menu Utama
             </button>
+
+            <!-- TPS DROPDOWN FILTER ELEMENT -->
+            <div
+              class="flex items-center gap-2 w-full md:w-auto justify-center"
+            >
+              <span
+                class="text-xs md:text-sm text-slate-400 font-bold whitespace-nowrap"
+                >📍 Filter Wilayah:</span
+              >
+              <select
+                id="tps-select-filter"
+                onchange="applyTpsFilter()"
+                class="w-full md:w-48 bg-slate-800 text-white border border-white/10 rounded-xl px-3 py-2 text-xs md:text-sm font-semibold focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+              >
+                <option value="all">🗳️ Semua TPS (Total)</option>
+              </select>
+            </div>
+
             <button
               onclick="fetchData()"
-              class="w-full sm:w-auto justify-center text-xs md:text-sm bg-white hover:bg-slate-200 text-slate-900 px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg"
+              class="w-full md:w-auto justify-center text-xs md:text-sm bg-white hover:bg-slate-200 text-slate-900 px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg"
             >
               🔄 Refresh Data
             </button>
+          </div>
+
+          <!-- Dynamic TPS Information Banner -->
+          <div
+            id="tps-info-banner"
+            class="hidden bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs md:text-sm animate-up"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-blue-400 font-bold">📍 TPS Aktif:</span>
+              <span id="info-tps-nama" class="font-extrabold text-white text-sm"
+                >-</span
+              >
+            </div>
+            <div class="flex items-center gap-4">
+              <div>
+                <span class="text-slate-400 font-medium">Ketua TPS:</span>
+                <span id="info-tps-ketua" class="font-bold text-white ml-1"
+                  >-</span
+                >
+              </div>
+              <div class="w-1 h-4 bg-white/10 hidden sm:block"></div>
+              <div>
+                <span class="text-slate-400 font-medium">Suara Sah TPS:</span>
+                <span id="info-tps-sah" class="font-bold text-emerald-400 ml-1"
+                  >0</span
+                >
+              </div>
+            </div>
           </div>
 
           <!-- Chart & Standings List Dual Column Layout -->
@@ -534,7 +581,8 @@
         "https://script.google.com/macros/s/AKfycbxy1WFNw-IJrTKIMYCBcBWxm66_FPfh-xpKyW70G7lP7kNFCirSBFXQ_wg-j45lHoVZZQ/exec";
 
       let myChart;
-      let localDataCache = [];
+      let rawApiResponseCache = null; // Menyimpan data murni payload API
+      let localDataCache = []; // Menyimpan data kandidat terpilih (sesuai filter)
 
       // Internal Client Router for page tabs
       function switchPage(pageId) {
@@ -636,7 +684,13 @@
           .then((res) => {
             if (res && !res.error) {
               setConnectionStatus("Terhubung", "emerald");
-              renderUI(res);
+              rawApiResponseCache = res; // simpan payload utuh ke cache global
+
+              // Perbarui opsi menu dropdown TPS secara dinamis
+              populateTpsDropdown(res.tpsData);
+
+              // Tampilkan data global (Semua TPS) saat pertama kali dimuat
+              renderUI("all");
             } else {
               throw new Error(
                 res.message || "Terdapat kegagalan struktur data backend API.",
@@ -689,75 +743,123 @@
         }
       }
 
-      // Offline Local Mock dataset
-      function loadDemoMockData() {
-        const mockResponse = {
-          statistik: {
-            totalDpt: 5200,
-            totalSah: 4850,
-            totalTidakSah: 150,
-            totalGolput: 200,
-          },
-          kandidat: [
-            {
-              nama: "H. Ahmad Fauzi",
-              suara: 1850,
-              persentase: 38.1,
-              foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-              visiMisi:
-                "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
-            },
-            {
-              nama: "Drs. M. Ridwan",
-              suara: 1420,
-              persentase: 29.3,
-              foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-              visiMisi:
-                "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
-            },
-            {
-              nama: "Siti Aminah, S.E.",
-              suara: 980,
-              persentase: 20.2,
-              foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-              visiMisi:
-                "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
-            },
-            {
-              nama: "Budi Santoso",
-              suara: 600,
-              persentase: 12.4,
-              foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-              visiMisi:
-                "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
-            },
-          ],
-        };
-        renderUI(mockResponse);
+      // Memasukkan pilihan nama TPS dari Spreadsheet ke elemen Select HTML
+      function populateTpsDropdown(tpsData) {
+        const select = document.getElementById("tps-select-filter");
+
+        // Bersihkan opsi lama kecuali "Semua TPS"
+        select.innerHTML = '<option value="all">🗳️ Semua TPS (Total)</option>';
+
+        if (tpsData && tpsData.length > 0) {
+          tpsData.forEach((t) => {
+            const option = document.createElement("option");
+            option.value = t.tps;
+            option.innerText = `📍 ${t.tps} (${t.ketua})`;
+            select.appendChild(option);
+          });
+        }
       }
 
-      // Rendering logic
-      function renderUI(res) {
-        localDataCache = res.kandidat;
+      // Dipicu saat user mengubah nilai TPS di Dropdown
+      function applyTpsFilter() {
+        const select = document.getElementById("tps-select-filter");
+        const selectedValue = select.value;
+        renderUI(selectedValue);
+      }
 
-        // Render main aggregated indicators
+      // Core Rendering logic dengan dukungan filtering data lokal berbasis TPS
+      function renderUI(tpsFilter = "all") {
+        if (!rawApiResponseCache) return;
+
+        let displayStat = {};
+        let candidatesListOutput = [];
+        let isSpecificTps = tpsFilter !== "all";
+
+        const banner = document.getElementById("tps-info-banner");
+        const bannerTpsNama = document.getElementById("info-tps-nama");
+        const bannerTpsKetua = document.getElementById("info-tps-ketua");
+        const bannerTpsSah = document.getElementById("info-tps-sah");
+
+        if (!isSpecificTps) {
+          // JIKA SEMUA TPS terpilih (Tampilan Global Default)
+          banner.classList.add("hidden");
+          displayStat = { ...rawApiResponseCache.statistik };
+          candidatesListOutput = rawApiResponseCache.kandidat.map((k) => ({
+            ...k,
+          }));
+        } else {
+          // JIKA TPS TERTENTU terpilih
+          const matchedTps = rawApiResponseCache.tpsData.find(
+            (t) => t.tps === tpsFilter,
+          );
+
+          if (matchedTps) {
+            // Update & tampilkan banner info khusus Ketua TPS
+            banner.classList.remove("hidden");
+            bannerTpsNama.innerText = matchedTps.tps;
+            bannerTpsKetua.innerText = matchedTps.ketua || "Belum Ditentukan";
+            bannerTpsSah.innerText =
+              matchedTps.suaraSah.toLocaleString("id-ID") + " Suara";
+
+            displayStat = {
+              totalDpt: matchedTps.dpt,
+              totalSah: matchedTps.suaraSah,
+              totalTidakSah: matchedTps.tidakSah,
+              totalGolput: matchedTps.golput,
+            };
+
+            // Hitung ulang perolehan suara & persentase kandidat di TPS ini secara dinamis
+            candidatesListOutput = rawApiResponseCache.kandidat.map(
+              (k, index) => {
+                const suaraLocal = matchedTps.suaraKandidat[index] || 0;
+                const persentaseLocal =
+                  matchedTps.suaraSah > 0
+                    ? (suaraLocal / matchedTps.suaraSah) * 100
+                    : 0;
+
+                return {
+                  nama: k.nama,
+                  foto: k.foto,
+                  visiMisi: k.visiMisi,
+                  suara: suaraLocal,
+                  persentase: Math.round(persentaseLocal * 10) / 10, // bulatkan 1 desimal
+                };
+              },
+            );
+          } else {
+            // Fallback jika data TPS tidak ditemukan
+            isSpecificTps = false;
+            banner.classList.add("hidden");
+            displayStat = { ...rawApiResponseCache.statistik };
+            candidatesListOutput = rawApiResponseCache.kandidat.map((k) => ({
+              ...k,
+            }));
+          }
+        }
+
+        // Cache hasil perhitungan lokal untuk modal interaktif
+        localDataCache = candidatesListOutput;
+
+        // Render main aggregated indicators pada kartu dashboard
         document.getElementById("home-total-suara").innerText =
-          res.statistik.totalSah.toLocaleString("id-ID");
+          displayStat.totalSah.toLocaleString("id-ID");
         document.getElementById("stat-dpt").innerText =
-          res.statistik.totalDpt.toLocaleString("id-ID");
+          displayStat.totalDpt.toLocaleString("id-ID");
         document.getElementById("stat-tidaksah").innerText =
-          res.statistik.totalTidakSah.toLocaleString("id-ID");
+          displayStat.totalTidakSah.toLocaleString("id-ID");
         document.getElementById("stat-golput").innerText =
-          res.statistik.totalGolput.toLocaleString("id-ID");
+          displayStat.totalGolput.toLocaleString("id-ID");
 
         // Update ChartJS data properties
-        myChart.data.labels = res.kandidat.map((k) => k.nama);
-        myChart.data.datasets[0].data = res.kandidat.map(() => 0);
+        myChart.data.labels = candidatesListOutput.map((k) => k.nama);
+        myChart.data.datasets[0].data = candidatesListOutput.map(() => 0);
         myChart.update("none");
 
         // Trigger transition layout
         setTimeout(() => {
-          myChart.data.datasets[0].data = res.kandidat.map((k) => k.persentase);
+          myChart.data.datasets[0].data = candidatesListOutput.map(
+            (k) => k.persentase,
+          );
           myChart.update();
         }, 150);
 
@@ -773,7 +875,7 @@
           "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
         ];
 
-        res.kandidat.forEach((k, index) => {
+        candidatesListOutput.forEach((k, index) => {
           const colors = [
             "bg-blue-500",
             "bg-emerald-500",
@@ -840,8 +942,78 @@
         document.getElementById("visi-misi-container").innerHTML = visiMisiHtml;
       }
 
+      // Offline Local Mock dataset
+      function loadDemoMockData() {
+        const mockResponse = {
+          statistik: {
+            totalDpt: 5200,
+            totalSah: 4850,
+            totalTidakSah: 150,
+            totalGolput: 200,
+          },
+          kandidat: [
+            {
+              nama: "H. Ahmad Fauzi",
+              suara: 1850,
+              persentase: 38.1,
+              foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+              visiMisi:
+                "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
+            },
+            {
+              nama: "Drs. M. Ridwan",
+              suara: 1420,
+              persentase: 29.3,
+              foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+              visiMisi:
+                "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
+            },
+            {
+              nama: "Siti Aminah, S.E.",
+              suara: 980,
+              persentase: 20.2,
+              foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+              visiMisi:
+                "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
+            },
+            {
+              nama: "Budi Santoso",
+              suara: 600,
+              persentase: 12.4,
+              foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+              visiMisi:
+                "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
+            },
+          ],
+          tpsData: [
+            {
+              tps: "TPS 1 Demo",
+              ketua: "Hadi Swasono",
+              dpt: 150,
+              golput: 10,
+              tidakSah: 10,
+              suaraSah: 130,
+              suaraKandidat: [60, 40, 20, 10],
+            },
+            {
+              tps: "TPS 2 Demo",
+              ketua: "Budi Jatmiko",
+              dpt: 200,
+              golput: 20,
+              tidakSah: 10,
+              suaraSah: 170,
+              suaraKandidat: [50, 60, 40, 20],
+            },
+          ],
+        };
+        rawApiResponseCache = mockResponse;
+        populateTpsDropdown(mockResponse.tpsData);
+        renderUI("all");
+      }
+
       // Candidate profile details modal control
       function openModal(index, visiTeks) {
+        // Mengambil profil kandidat dari data cache lokal hasil filter
         const kandidat = localDataCache[index];
         if (!kandidat) return;
 
@@ -862,6 +1034,7 @@
         );
       }
 
+      // Menutup Modal Profil Calon
       function closeModal() {
         const modal = document.getElementById("profile-modal");
         modal.firstElementChild.classList.add("scale-95");
@@ -883,6 +1056,7 @@
         );
       }
 
+      // Menutup Modal Bantuan
       function closeInfoModal() {
         const modal = document.getElementById("info-modal");
         modal.firstElementChild.classList.add("scale-95");
