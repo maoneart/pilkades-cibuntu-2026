@@ -186,7 +186,7 @@
                 class="space-y-1.5 flex flex-col items-center md:items-start"
               >
                 <span
-                  class="bg-blue-500/30 text-blue-200 text-[10px] md:text-xs px-3.5 py-1 rounded-full font-bold uppercase tracking-wider border border-blue-400/20 inline-block"
+                  class="bg-blue-500/30 text-blue-200 text-[10px] md:text-xs px-3.5 py-1 rounded-full font-bold uppercase tracking-wider border border-blue-400/20 inline-block text-center md:text-left"
                 >
                   📍 PEMILIHAN KEPALA DESA CIBUNTU PERIODE 2026 - 2034
                 </span>
@@ -995,9 +995,9 @@
                 </div>
             </div>`;
 
-          // Image grid markup
+          // Image grid markup: Passing only index for a clean click call without attribute breaks
           photoHtml += `
-            <div onclick="openModal(${index}, '${visiTeks.replace(/'/g, "\\'")}')" class="card-gofood p-4 md:p-6 text-center cursor-pointer hover:bg-white/5 transition-all bg-white/[0.01] flex flex-col justify-center h-full w-full animate-up">
+            <div onclick="openModal(${index})" class="card-gofood p-4 md:p-6 text-center cursor-pointer hover:bg-white/5 transition-all bg-white/[0.01] flex flex-col justify-center h-full w-full animate-up">
                 <div class="relative w-20 h-20 md:w-32 md:h-32 mx-auto mb-4">
                     <img src="${k.foto}" class="w-full h-full object-cover rounded-2xl md:rounded-3xl border border-white/10 shadow-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                     <div class="absolute -bottom-2 -right-2 w-7 h-7 md:w-10 md:h-10 ${colors[index]} rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs md:text-base text-white shadow-lg">
@@ -1018,7 +1018,7 @@
                 </div>
                 <div class="text-xs md:text-base text-slate-300 leading-relaxed bg-black/30 p-4 md:p-6 rounded-2xl border border-white/5 flex-grow">
                     <p class="text-white font-bold text-[10px] md:text-xs uppercase tracking-wider mb-2 md:mb-3 ${textColors[index]}">Visi & Misi Calon:</p>
-                    "${visiTeks}"
+                    "${visiTeks.replace(/\n/g, "<br>")}"
                 </div>
             </div>`;
         });
@@ -1033,43 +1033,43 @@
       function loadDemoMockData() {
         const mockResponse = {
           statistik: {
-            totalDpt: 5200,
-            totalSah: 4850,
-            totalTidakSah: 150,
-            totalGolput: 200,
+            totalDpt: 250,
+            totalSah: 250,
+            totalTidakSah: 0,
+            totalGolput: 0,
           },
           kandidat: [
             {
-              nama: "H. Ahmad Fauzi",
-              suara: 1850,
-              persentase: 38.1,
-              foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+              nama: "Nadih Rusmana",
+              suara: 60,
+              persentase: 24.0,
+              foto: "",
               visiMisi:
-                "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
+                "Visi:\nNadih Rusmana Berkhidmat untuk Rakyat.\n\nMisi:\nMembawa Cibuntu menuju era baru pelayanan transparan.",
             },
             {
-              nama: "Drs. M. Ridwan",
-              suara: 1420,
-              persentase: 29.3,
-              foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+              nama: "H Hermansyah",
+              suara: 70,
+              persentase: 28.0,
+              foto: "",
               visiMisi:
-                "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
+                "Visi:\nMensejahterakan seluruh warga tani dan karang taruna.\n\nMisi:\nPeningkatan UMKM lokal dan infrastruktur gang desa.",
             },
             {
-              nama: "Siti Aminah, S.E.",
-              suara: 980,
-              persentase: 20.2,
-              foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+              nama: "Dadang Rukmana",
+              suara: 80,
+              persentase: 32.0,
+              foto: "",
               visiMisi:
-                "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
+                "Visi:\nCibuntu Mandiri, Agamis, dan Terbuka.\n\nMisi:\nPelayanan kesehatan door-to-door bagi lansia secara gratis.",
             },
             {
-              nama: "Budi Santoso",
-              suara: 600,
-              persentase: 12.4,
-              foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+              nama: "Dwi Haryanto",
+              suara: 40,
+              persentase: 16.0,
+              foto: "",
               visiMisi:
-                "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
+                "Visi:\nDigitalisasi pelayanan administrasi desa.\n\nMisi:\nSemua urusan kependudukan selesai lewat smartphone.",
             },
           ],
           tpsData: [
@@ -1078,7 +1078,7 @@
               ketua: "Hadi Swasono",
               dpt: 150,
               golput: 10,
-              nichtSah: 10,
+              tidakSah: 10,
               suaraSah: 130,
               suaraKandidat: [60, 40, 20, 10],
             },
@@ -1099,7 +1099,7 @@
       }
 
       // Candidate profile details modal control
-      function openModal(index, visiTeks) {
+      function openModal(index) {
         // Mengambil profil kandidat dari data cache lokal hasil filter
         const kandidat = localDataCache[index];
         if (!kandidat) return;
@@ -1110,7 +1110,22 @@
         document.getElementById("modal-nama").innerText = kandidat.nama;
         document.getElementById("modal-no").innerText =
           `Kandidat Nomor Urut 0${index + 1}`;
-        document.getElementById("modal-visi-teks").innerText = `"${visiTeks}"`;
+
+        const defaultVisiMisi = [
+          "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
+          "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
+          "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
+          "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
+        ];
+
+        const visiTeks =
+          kandidat.visiMisi ||
+          defaultVisiMisi[index] ||
+          "Berkomitmen penuh mengabdi demi kemaslahatan, keterbukaan, dan kemajuan bersama warga masyarakat Desa Cibuntu.";
+
+        // Mengubah string enter (\n) menjadi tag break (<br>) agar pemformatan Spreadsheet tampil sempurna di modal
+        document.getElementById("modal-visi-teks").innerHTML =
+          `"${visiTeks.replace(/\n/g, "<br>")}"`;
 
         const modal = document.getElementById("profile-modal");
         modal.classList.remove("hidden");
