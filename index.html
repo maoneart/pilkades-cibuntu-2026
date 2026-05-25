@@ -2,1797 +2,756 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pilkades Cibuntu 2026 - Dashboard & Quick Count</title>
-    <!-- Tailwind CSS CDN -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Monitoring Quick Count Cibuntu</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <!-- Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- React & ReactDOM UMD -->
-    <script
-      src="https://unpkg.com/react@18/umd/react.production.min.js"
-      crossorigin
-    ></script>
-    <script
-      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-      crossorigin
-    ></script>
-    <!-- Babel for JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
+      /* FIX AMPUH ANTI-PUTIH & ANTI-JUMPING */
+      html,
       body {
+        background-color: #0f172a !important;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+        touch-action: none;
+      }
+      body {
+        /* Jadikan body sebagai Flex container agar banner GAS tidak merusak layout */
+        display: flex;
+        flex-direction: column;
         font-family: "Plus Jakarta Sans", sans-serif;
-        background-color: #f8fafc;
+        color: white;
       }
-      /* Custom scrollbar styling */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+
+      /* Hilangkan scrollbar agar murni seperti Aplikasi Native */
+      .app-container::-webkit-scrollbar {
+        display: none;
       }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9;
+      .app-container {
+        flex: 1; /* Mengisi sisa ruang di bawah banner GAS secara otomatis */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        touch-action: pan-y;
+        overflow-y: auto;
+        overflow-x: hidden;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+
+      /* Glassmorphism Card Style */
+      .card-gofood {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(12px);
+        border-radius: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+      .card-gofood:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(59, 130, 246, 0.3);
       }
-      .gradient-brand {
-        background: linear-gradient(135deg, #1e3a8a 0%, #0d9488 100%);
+
+      /* Banner Gradient Style */
+      .banner-blue {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
       }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(226, 232, 240, 0.8);
+      .banner-blue::before {
+        content: "";
+        position: absolute;
+        top: -20%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 50%;
+      }
+
+      .animate-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     </style>
   </head>
-  <body class="text-slate-800 antialiased min-h-screen">
-    <div id="root"></div>
 
-    <script type="text/babel">
-      const { useState, useEffect, useRef } = React;
-
-      function App() {
-        // State management
-        const [currentTab, setCurrentTab] = useState("dashboard"); // dashboard, input, data, config
-        const [apiConnected, setApiConnected] = useState(false);
-        const [webAppUrl, setWebAppUrl] = useState("");
-        const [isLoading, setIsLoading] = useState(false);
-        const [notification, setNotification] = useState(null);
-        const [authPin, setAuthPin] = useState("");
-        const [isAuthenticated, setIsAuthenticated] = useState(false);
-        const [showPinModal, setShowPinModal] = useState(false);
-        const [pendingTab, setPendingTab] = useState(null);
-
-        // Spreadsheet Configuration
-        const spreadsheetId = "1AEicqnQSwgz9FiAwFt2CzlHM6tQgttoj2y_FTxWrEx4";
-
-        // Mock Data for offline preview (automatically synchronized with API if connected)
-        const [candidates, setCandidates] = useState([
-          {
-            id: 1,
-            nama: "Kandidat 1 - H. Ahmad Fauzi",
-            visi: "Mewujudkan Cibuntu yang mandiri, transparan, dan berbudaya dengan pemanfaatan teknologi informasi untuk pelayanan desa.",
-            misi: "1. Meningkatkan transparansi anggaran desa.\n2. Digitalisasi administrasi kependudukan.\n3. Memberdayakan UMKM lokal melalui pelatihan bisnis.",
-            foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=256&h=256",
-            totalSuara: 450,
-            persentase: 35.5,
-          },
-          {
-            id: 2,
-            nama: "Kandidat 2 - Siti Aminah, S.Pd.",
-            visi: "Cibuntu Cerdas dan Sehat: Fokus pada peningkatan mutu pendidikan anak usia dini dan penguatan fasilitas kesehatan dasar.",
-            misi: "1. Revitalisasi Posyandu desa di setiap dusun.\n2. Memberikan beasiswa bagi anak berprestasi kurang mampu.\n3. Mengaktifkan ruang baca dan kreativitas remaja.",
-            foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256&h=256",
-            totalSuara: 380,
-            persentase: 30.0,
-          },
-          {
-            id: 3,
-            nama: "Kandidat 3 - Letkol (Purn) Sunarto",
-            visi: "Meningkatkan keamanan lingkungan, ketertiban sosial, serta memperkuat infrastruktur pertanian desa Cibuntu.",
-            misi: "1. Pemasangan CCTV di titik rawan desa.\n2. Normalisasi saluran irigasi sawah warga.\n3. Pembangunan jalan lingkungan desa yang tangguh.",
-            foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256&h=256",
-            totalSuara: 290,
-            persentase: 22.9,
-          },
-          {
-            id: 4,
-            nama: "Kandidat 4 - Budi Setiawan, M.T.",
-            visi: "Cibuntu Green & Go-Digital: Optimalisasi potensi desa berbasis lingkungan hidup sehat dan pariwisata lokal mandiri.",
-            misi: "1. Pengolahan sampah berbasis TPS3R.\n2. Pengembangan klaster wisata agraris.\n3. Penyediaan hotspot internet gratis di balai RT.",
-            foto: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=256&h=256",
-            totalSuara: 146,
-            persentase: 11.6,
-          },
-        ]);
-
-        const [tpsRecords, setTpsRecords] = useState([
-          {
-            tps: "TPS 01",
-            ketua: "Mulyadi",
-            dpt: 300,
-            golput: 15,
-            tidakSah: 5,
-            kandidat1: 110,
-            kandidat2: 90,
-            kandidat3: 60,
-            kandidat4: 20,
-            suaraSah: 280,
-            pemilihHadir: 285,
-            pemilihTidakHadir: 15,
-          },
-          {
-            tps: "TPS 02",
-            ketua: "Kusnadi",
-            dpt: 320,
-            golput: 20,
-            tidakSah: 8,
-            kandidat1: 120,
-            kandidat2: 100,
-            kandidat3: 65,
-            kandidat4: 27,
-            suaraSah: 312,
-            pemilihHadir: 320,
-            pemilihTidakHadir: 0,
-          },
-          {
-            tps: "TPS 03",
-            ketua: "Sugeng",
-            dpt: 290,
-            golput: 25,
-            tidakSah: 4,
-            kandidat1: 95,
-            kandidat2: 85,
-            kandidat3: 60,
-            kandidat4: 21,
-            suaraSah: 261,
-            pemilihHadir: 265,
-            pemilihTidakHadir: 25,
-          },
-          {
-            tps: "TPS 04",
-            ketua: "Andri",
-            dpt: 350,
-            golput: 30,
-            tidakSah: 10,
-            kandidat1: 125,
-            kandidat2: 105,
-            kandidat3: 65,
-            kandidat4: 15,
-            suaraSah: 310,
-            pemilihHadir: 320,
-            pemilihTidakHadir: 30,
-          },
-        ]);
-
-        // Form Inputs for TPS submission
-        const [formTps, setFormTps] = useState("");
-        const [formKetua, setFormKetua] = useState("");
-        const [formDpt, setFormDpt] = useState(0);
-        const [formTidakSah, setFormTidakSah] = useState(0);
-        const [formKand1, setFormKand1] = useState(0);
-        const [formKand2, setFormKand2] = useState(0);
-        const [formKand3, setFormKand3] = useState(0);
-        const [formKand4, setFormKand4] = useState(0);
-
-        // Ref for Chart instantiation
-        const chartRef = useRef(null);
-        const chartInstance = useRef(null);
-
-        // Fetch live data from deployed GAS API
-        const fetchLiveData = async (url) => {
-          setIsLoading(true);
-          try {
-            const cleanUrl = url || webAppUrl;
-            if (!cleanUrl) return;
-
-            // Adding timestamp to bypass browser caching
-            const response = await fetch(
-              `${cleanUrl}?action=read&t=${Date.now()}`,
-            );
-            const json = await response.json();
-
-            if (json.success && json.data) {
-              showToast(
-                "Berhasil sinkronisasi dengan database Google Sheets!",
-                "success",
-              );
-              setApiConnected(true);
-
-              // Adapt data from sheets
-              if (json.data.input_suara && json.data.input_suara.length > 0) {
-                const formattedTps = json.data.input_suara.map((row) => ({
-                  tps: row["TPS"],
-                  ketua: row["Ketua TPS"],
-                  dpt: Number(row["DPT"] || 0),
-                  golput: Number(row["Golput"] || 0),
-                  tidakSah: Number(row["Tidak Sah"] || 0),
-                  kandidat1: Number(
-                    row["Kanididat 1"] || row["Kandidat 1"] || 0,
-                  ),
-                  kandidat2: Number(row["Kandidat 2"] || 0),
-                  kandidat3: Number(row["Kandidat 3"] || 0),
-                  kandidat4: Number(row["Kandidat 4"] || 0),
-                  suaraSah: Number(row["Suara Sah"] || 0),
-                  pemilihHadir: Number(row["Pemilih Hadir"] || 0),
-                  pemilihTidakHadir: Number(row["Pemilih Tidak Hadir"] || 0),
-                }));
-                setTpsRecords(formattedTps);
-              }
-
-              if (
-                json.data.rekap_persentase &&
-                json.data.rekap_persentase.length > 0
-              ) {
-                const formattedCandidates = json.data.rekap_persentase.map(
-                  (row, idx) => ({
-                    id: idx + 1,
-                    nama: row["Nama Kandidat"],
-                    visi: row["Visi"] || "",
-                    misi: row["Misi"] || "",
-                    foto:
-                      row["Foto Kandidat"] ||
-                      `https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=256&h=256`,
-                    totalSuara: Number(row["Total Suara"] || 0),
-                    persentase: Number(row["Persentase"] || 0),
-                  }),
-                );
-                setCandidates(formattedCandidates);
-              }
-            } else {
-              showToast(
-                "Gagal memproses data API: " + (json.error || "Unknown error"),
-                "error",
-              );
-            }
-          } catch (error) {
-            console.error("API Fetch Error:", error);
-            showToast(
-              "Gagal menghubungkan ke API. Pastikan URL benar dan CORS diaktifkan.",
-              "error",
-            );
-          } finally {
-            setIsLoading(false);
-          }
-        };
-
-        // Trigger fetch on mount or API config change
-        useEffect(() => {
-          const storedUrl = localStorage.getItem("pilkades_gas_url");
-          if (storedUrl) {
-            setWebAppUrl(storedUrl);
-            fetchLiveData(storedUrl);
-          }
-        }, []);
-
-        // Render Chart.js when records or tab changes
-        useEffect(() => {
-          if (currentTab === "dashboard" && chartRef.current) {
-            if (chartInstance.current) {
-              chartInstance.current.destroy();
-            }
-
-            const ctx = chartRef.current.getContext("2d");
-
-            const labels = candidates.map((c) => c.nama.split(" - ")[0]);
-            const votes = candidates.map((c) => c.totalSuara);
-
-            chartInstance.current = new Chart(ctx, {
-              type: "doughnut",
-              data: {
-                labels: labels,
-                datasets: [
-                  {
-                    label: "Perolehan Suara",
-                    data: votes,
-                    backgroundColor: [
-                      "rgba(30, 58, 138, 0.85)", // Navy
-                      "rgba(13, 148, 136, 0.85)", // Teal
-                      "rgba(245, 158, 11, 0.85)", // Amber
-                      "rgba(239, 68, 68, 0.85)", // Red
-                    ],
-                    borderColor: ["#1e3a8a", "#0d9488", "#f59e0b", "#ef4444"],
-                    borderWidth: 1,
-                  },
-                ],
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: "bottom",
-                    labels: {
-                      font: {
-                        family: "Plus Jakarta Sans",
-                        size: 11,
-                      },
-                      boxWidth: 12,
-                    },
-                  },
-                },
-                cutout: "70%",
-              },
-            });
-          }
-        }, [candidates, currentTab]);
-
-        // Helper for notifications without alert()
-        const showToast = (message, type = "info") => {
-          setNotification({ message, type });
-          setTimeout(() => setNotification(null), 5000);
-        };
-
-        // Authentication wrapper for Admin Tabs (Form Input & Data Management)
-        const handleTabClick = (tab) => {
-          if (tab === "input" || tab === "data") {
-            if (!isAuthenticated) {
-              setPendingTab(tab);
-              setShowPinModal(true);
-            } else {
-              setCurrentTab(tab);
-            }
-          } else {
-            setCurrentTab(tab);
-          }
-        };
-
-        const verifyPIN = () => {
-          // Pin Default untuk simulasi keamanan: '2026'
-          if (authPin === "2026") {
-            setIsAuthenticated(true);
-            setShowPinModal(false);
-            setCurrentTab(pendingTab);
-            showToast("Otorisasi Admin Berhasil!", "success");
-          } else {
-            showToast("Kode PIN salah! Gunakan PIN default: 2026", "error");
-          }
-          setAuthPin("");
-        };
-
-        // Derived values computed in real-time
-        const totalFormSuaraSah =
-          Number(formKand1) +
-          Number(formKand2) +
-          Number(formKand3) +
-          Number(formKand4);
-        const totalFormPemilihHadir = totalFormSuaraSah + Number(formTidakSah);
-        const calculatedGolput = Math.max(
-          0,
-          Number(formDpt) - totalFormPemilihHadir,
-        );
-
-        const handleFormSubmit = async (e) => {
-          e.preventDefault();
-
-          if (!formTps || !formKetua || formDpt <= 0) {
-            showToast(
-              "Harap lengkapi nama TPS, Ketua, dan jumlah DPT.",
-              "error",
-            );
-            return;
-          }
-
-          if (totalFormPemilihHadir > formDpt) {
-            showToast(
-              "Kesalahan Logika: Jumlah pemilih hadir (" +
-                totalFormPemilihHadir +
-                ") melebihi DPT (" +
-                formDpt +
-                ")!",
-              "error",
-            );
-            return;
-          }
-
-          const newRecord = {
-            TPS: formTps,
-            "Ketua TPS": formKetua,
-            DPT: Number(formDpt),
-            Golput: Number(calculatedGolput),
-            "Tidak Sah": Number(formTidakSah),
-            "Kanididat 1": Number(formKand1),
-            "Kandidat 2": Number(formKand2),
-            "Kandidat 3": Number(formKand3),
-            "Kandidat 4": Number(formKand4),
-          };
-
-          setIsLoading(true);
-
-          if (apiConnected && webAppUrl) {
-            try {
-              const response = await fetch(webAppUrl, {
-                method: "POST",
-                mode: "no-cors", // standard workaround for simpler cross-origin GAS posts without strict preflight handling
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  action: "submit",
-                  data: newRecord,
-                }),
-              });
-
-              // Since 'no-cors' doesn't let us read response body directly,
-              // we will show success prompt and trigger a silent reload
-              showToast(
-                "Data berhasil dikirim ke Google Apps Script API!",
-                "success",
-              );
-              setTimeout(() => fetchLiveData(), 1500);
-              resetForm();
-            } catch (err) {
-              showToast(
-                "Gagal mengirim data ke API server: " + err.toString(),
-                "error",
-              );
-              setIsLoading(false);
-            }
-          } else {
-            // Simulation Mode (Local Save)
-            // Check duplicate TPS
-            const existsIndex = tpsRecords.findIndex(
-              (r) => r.tps.toLowerCase() === formTps.toLowerCase(),
-            );
-            let updatedRecords = [...tpsRecords];
-
-            const mockRecordFormatted = {
-              tps: formTps,
-              ketua: formKetua,
-              dpt: Number(formDpt),
-              golput: Number(calculatedGolput),
-              tidakSah: Number(formTidakSah),
-              kandidat1: Number(formKand1),
-              kandidat2: Number(formKand2),
-              kandidat3: Number(formKand3),
-              kandidat4: Number(formKand4),
-              suaraSah: totalFormSuaraSah,
-              pemilihHadir: totalFormPemilihHadir,
-              pemilihTidakHadir: calculatedGolput,
-            };
-
-            if (existsIndex > -1) {
-              updatedRecords[existsIndex] = mockRecordFormatted;
-              showToast(
-                `Data ${formTps} berhasil diperbarui (Simulasi Lokal).`,
-                "success",
-              );
-            } else {
-              updatedRecords.push(mockRecordFormatted);
-              showToast(
-                `Data ${formTps} berhasil disimpan (Simulasi Lokal).`,
-                "success",
-              );
-            }
-
-            // Recalculate Candidate values locally
-            const updatedCandidates = [...candidates];
-            const c1Sum = updatedRecords.reduce(
-              (acc, r) => acc + r.kandidat1,
-              0,
-            );
-            const c2Sum = updatedRecords.reduce(
-              (acc, r) => acc + r.kandidat2,
-              0,
-            );
-            const c3Sum = updatedRecords.reduce(
-              (acc, r) => acc + r.kandidat3,
-              0,
-            );
-            const c4Sum = updatedRecords.reduce(
-              (acc, r) => acc + r.kandidat4,
-              0,
-            );
-            const grandTotal = c1Sum + c2Sum + c3Sum + c4Sum;
-
-            updatedCandidates[0].totalSuara = c1Sum;
-            updatedCandidates[1].totalSuara = c2Sum;
-            updatedCandidates[2].totalSuara = c3Sum;
-            updatedCandidates[3].totalSuara = c4Sum;
-
-            updatedCandidates.forEach((cand) => {
-              cand.persentase =
-                grandTotal > 0
-                  ? Number(((cand.totalSuara / grandTotal) * 100).toFixed(1))
-                  : 0;
-            });
-
-            setTpsRecords(updatedRecords);
-            setCandidates(updatedCandidates);
-            setIsLoading(false);
-            resetForm();
-          }
-        };
-
-        const resetForm = () => {
-          setFormTps("");
-          setFormKetua("");
-          setFormDpt(0);
-          setFormTidakSah(0);
-          setFormKand1(0);
-          setFormKand2(0);
-          setFormKand3(0);
-          setFormKand4(0);
-        };
-
-        // Remove a TPS record (Simulated or actual via API)
-        const handleDeleteTps = async (tpsName) => {
-          if (
-            !window.confirm(
-              `Apakah Anda yakin ingin menghapus data dari ${tpsName}?`,
-            )
-          )
-            return;
-
-          setIsLoading(true);
-          if (apiConnected && webAppUrl) {
-            try {
-              await fetch(webAppUrl, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  action: "delete",
-                  tps: tpsName,
-                }),
-              });
-              showToast(
-                `Permintaan hapus ${tpsName} terkirim ke GAS.`,
-                "success",
-              );
-              setTimeout(() => fetchLiveData(), 1500);
-            } catch (err) {
-              showToast(
-                "Gagal menghapus data di server: " + err.toString(),
-                "error",
-              );
-              setIsLoading(false);
-            }
-          } else {
-            const filtered = tpsRecords.filter((r) => r.tps !== tpsName);
-            setTpsRecords(filtered);
-            showToast(`Data ${tpsName} dihapus secara lokal.`, "info");
-            setIsLoading(false);
-          }
-        };
-
-        // Global Statistics
-        const totalDpt = tpsRecords.reduce((acc, r) => acc + r.dpt, 0);
-        const totalHadir = tpsRecords.reduce(
-          (acc, r) => acc + r.pemilihHadir,
-          0,
-        );
-        const totalTidakSah = tpsRecords.reduce(
-          (acc, r) => acc + r.tidakSah,
-          0,
-        );
-        const totalGolput = tpsRecords.reduce((acc, r) => acc + r.golput, 0);
-        const totalSuaraSahSemua = tpsRecords.reduce(
-          (acc, r) => acc + r.suaraSah,
-          0,
-        );
-        const partisipasiPersen =
-          totalDpt > 0 ? ((totalHadir / totalDpt) * 100).toFixed(1) : 0;
-        const tpsTerinput = tpsRecords.length;
-
-        const backendCode = `/**
- * ==========================================================
- * PILKADES CIBUNTU 2026 - GOOGLE APS SCRIPT API BACKEND
- * Developer: GAS Architect (Senior Google Workspace Dev)
- * ==========================================================
- * 
- * Skenario Penggunaan:
- * 1. Jadikan berkas Google Sheets Anda sebagai database pusat.
- * 2. Pasang kode ini di ekstensi Google Apps Script dari spreadsheet tersebut.
- * 3. Deploy sebagai Aplikasi Web ("Web App") dengan setelan:
- *    - Execute as: "Me" (Email Anda)
- *    - Who has access: "Anyone" (Agar bisa dipanggil dari GitHub Pages secara publik)
- */
-
-// Ganti dengan ID Spreadsheet Pilkades Anda (Sesuai parameter Anda)
-const SPREADSHEET_ID = "${spreadsheetId}";
-
-/**
- * Handle HTTP GET Requests (Digunakan untuk penarikan real-time data)
- */
-function doGet(e) {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
-  
-  try {
-    const action = e.parameter.action || 'read';
-    
-    if (action === 'read') {
-      const data = getAllData();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Aksi GET tidak valid' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-/**
- * Handle HTTP POST Requests (Digunakan untuk input form TPS baru / delete)
- */
-function doPost(e) {
-  try {
-    let params;
-    if (e.postData && e.postData.contents) {
-      params = JSON.parse(e.postData.contents);
-    } else {
-      params = e.parameter;
-    }
-    
-    const action = params.action;
-    
-    if (action === 'submit') {
-      const result = submitTPSData(params.data);
-      // Setiap ada submit baru, picu penghitungan rekap otomatis untuk efisiensi eksekusi
-      recalculatePercentages();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, result: result }))
-        .setMimeType(ContentService.MimeType.JSON);
-    } else if (action === 'delete') {
-      const result = deleteTPSData(params.tps);
-      recalculatePercentages();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, result: result }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Aksi POST tidak valid' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-/**
- * Membaca seluruh data dari kedua Sheet database
- */
-function getAllData() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheetInput = ss.getSheetByName('input_suara') || initInputSheet(ss);
-  const sheetRekap = ss.getSheetByName('rekap_persentase') || initRekapSheet(ss);
-  
-  const inputRows = sheetInput.getDataRange().getValues();
-  const rekapRows = sheetRekap.getDataRange().getValues();
-  
-  const inputHeaders = inputRows[0];
-  const inputData = [];
-  for (let i = 1; i < inputRows.length; i++) {
-    const row = inputRows[i];
-    if (!row[0]) continue; // Lewati jika nama TPS kosong
-    const obj = {};
-    inputHeaders.forEach((header, index) => {
-      obj[header] = row[index];
-    });
-    inputData.push(obj);
-  }
-  
-  const rekapHeaders = rekapRows[0];
-  const rekapData = [];
-  for (let i = 1; i < rekapRows.length; i++) {
-    const row = rekapRows[i];
-    if (!row[0]) continue; // Lewati jika nama kandidat kosong
-    const obj = {};
-    rekapHeaders.forEach((header, index) => {
-      obj[header] = row[index];
-    });
-    rekapData.push(obj);
-  }
-  
-  return {
-    input_suara: inputData,
-    rekap_persentase: rekapData
-  };
-}
-
-/**
- * Memasukkan atau memperbarui baris data TPS ke lembar kerja 'input_suara'
- */
-function submitTPSData(data) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('input_suara') || initInputSheet(ss);
-  const rows = sheet.getDataRange().getValues();
-  
-  const tpsName = data.TPS;
-  let tpsRowIndex = -1;
-  
-  // Mencari jika data TPS sudah terdaftar sebelumnya untuk mode Update
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0].toString().toLowerCase() === tpsName.toString().toLowerCase()) {
-      tpsRowIndex = i + 1; // Konversi ke baris Excel (berbasis index 1)
-      break;
-    }
-  }
-  
-  // Perhitungan formula matang di sisi server untuk menjaga integritas data
-  const suaraSah = Number(data["Kanididat 1"] || 0) + 
-                   Number(data["Kandidat 2"] || 0) + 
-                   Number(data["Kandidat 3"] || 0) + 
-                   Number(data["Kandidat 4"] || 0);
-                   
-  const pemilihHadir = suaraSah + Number(data["Tidak Sah"] || 0);
-  const pemilihTidakHadir = Math.max(0, Number(data.DPT || 0) - pemilihHadir);
-  const golput = pemilihTidakHadir; // Golput merepresentasikan pemilih yang absen/tidak menyalurkan suara sah/tidak sah secara fisik
-  
-  const rowValues = [
-    tpsName,
-    data["Ketua TPS"] || "Belum Diisi",
-    Number(data.DPT || 0),
-    golput,
-    Number(data["Tidak Sah"] || 0),
-    Number(data["Kanididat 1"] || 0),
-    Number(data["Kandidat 2"] || 0),
-    Number(data["Kandidat 3"] || 0),
-    Number(data["Kandidat 4"] || 0),
-    suaraSah,
-    pemilihHadir,
-    pemilihTidakHadir
-  ];
-  
-  if (tpsRowIndex !== -1) {
-    // Mode Update Row
-    sheet.getRange(tpsRowIndex, 1, 1, rowValues.length).setValues([rowValues]);
-    return "Data TPS berhasil diperbarui!";
-  } else {
-    // Mode Append Row Baru
-    sheet.appendRow(rowValues);
-    return "Data TPS baru berhasil disimpan!";
-  }
-}
-
-/**
- * Menghapus baris data TPS
- */
-function deleteTPSData(tpsName) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('input_suara');
-  if (!sheet) return "Sheet tidak ditemukan";
-  
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0].toString().toLowerCase() === tpsName.toString().toLowerCase()) {
-      sheet.deleteRow(i + 1);
-      return "Berhasil menghapus " + tpsName;
-    }
-  }
-  return "Data TPS tidak ditemukan";
-}
-
-/**
- * Mengalkulasi ulang seluruh perolehan suara total dan meng-update 'rekap_persentase' secara batch
- */
-function recalculatePercentages() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheetInput = ss.getSheetByName('input_suara') || initInputSheet(ss);
-  const sheetRekap = ss.getSheetByName('rekap_persentase') || initRekapSheet(ss);
-  
-  const inputRows = sheetInput.getDataRange().getValues();
-  
-  let totalKand1 = 0;
-  let totalKand2 = 0;
-  let totalKand3 = 0;
-  let totalKand4 = 0;
-  
-  // Agregasi suara dari seluruh TPS
-  for (let i = 1; i < inputRows.length; i++) {
-    if (!inputRows[i][0]) continue;
-    totalKand1 += Number(inputRows[i][5] || 0); // Kolom Kanididat 1
-    totalKand2 += Number(inputRows[i][6] || 0); // Kolom Kandidat 2
-    totalKand3 += Number(inputRows[i][7] || 0); // Kolom Kandidat 3
-    totalKand4 += Number(inputRows[i][8] || 0); // Kolom Kandidat 4
-  }
-  
-  const totalSeluruhSuara = totalKand1 + totalKand2 + totalKand3 + totalKand4;
-  
-  const pct1 = totalSeluruhSuara > 0 ? (totalKand1 / totalSeluruhSuara) * 100 : 0;
-  const pct2 = totalSeluruhSuara > 0 ? (totalKand2 / totalSeluruhSuara) * 100 : 0;
-  const pct3 = totalSeluruhSuara > 0 ? (totalKand3 / totalSeluruhSuara) * 100 : 0;
-  const pct4 = totalSeluruhSuara > 0 ? (totalKand4 / totalSeluruhSuara) * 100 : 0;
-  
-  const rekapRows = sheetRekap.getDataRange().getValues();
-  
-  // Update data suara & persentase di lembar 'rekap_persentase'
-  // Kandidat 1 berasumsi di baris ke-2 (rekapRows[1]), dst.
-  if (rekapRows.length >= 5) {
-    sheetRekap.getRange(2, 5, 1, 2).setValues([[totalKand1, pct1.toFixed(1) + "%"]]);
-    sheetRekap.getRange(3, 5, 1, 2).setValues([[totalKand2, pct2.toFixed(1) + "%"]]);
-    sheetRekap.getRange(4, 5, 1, 2).setValues([[totalKand3, pct3.toFixed(1) + "%"]]);
-    sheetRekap.getRange(5, 5, 1, 2).setValues([[totalKand4, pct4.toFixed(1) + "%"]]);
-  }
-}
-
-/**
- * Fungsi Pengaman Inisialisasi Sheet input_suara jika belum ada
- */
-function initInputSheet(ss) {
-  const headers = ["TPS", "Ketua TPS", "DPT", "Golput", "Tidak Sah", "Kanididat 1", "Kandidat 2", "Kandidat 3", "Kandidat 4", "Suara Sah", "Pemilih Hadir", "Pemilih Tidak Hadir"];
-  const sheet = ss.insertSheet('input_suara');
-  sheet.appendRow(headers);
-  return sheet;
-}
-
-/**
- * Fungsi Pengaman Inisialisasi Sheet rekap_persentase jika belum ada
- */
-function initRekapSheet(ss) {
-  const headers = ["Nama Kandidat", "Visi", "Misi", "Foto Kandidat", "Total Suara", "Persentase"];
-  const sheet = ss.insertSheet('rekap_persentase');
-  sheet.appendRow(headers);
-  
-  // Dummy candidates data structure to preserve template
-  sheet.appendRow(["Kandidat 1 - H. Ahmad Fauzi", "Visi Kandidat 1", "Misi Kandidat 1", "https://images.unsplash.com/photo-1560250097-0b93528c311a", 0, "0.0%"]);
-  sheet.appendRow(["Kandidat 2 - Siti Aminah, S.Pd.", "Visi Kandidat 2", "Misi Kandidat 2", "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2", 0, "0.0%"]);
-  sheet.appendRow(["Kandidat 3 - Letkol (Purn) Sunarto", "Visi Kandidat 3", "Misi Kandidat 3", "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e", 0, "0.0%"]);
-  sheet.appendRow(["Kandidat 4 - Budi Setiawan, M.T.", "Visi Kandidat 4", "Misi Kandidat 4", "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7", 0, "0.0%"]);
-  return sheet;
-}`;
-
-        return (
-          <div className="flex flex-col min-h-screen">
-            {/* Header */}
-            <header className="gradient-brand text-white shadow-lg">
-              <div className="max-width-7xl mx-auto px-4 py-5 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-white/10 rounded-xl">
-                    <i className="fa-solid fa-square-poll-vertical text-2xl text-teal-300"></i>
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-extrabold tracking-tight">
-                      PILKADES CIBUNTU 2026
-                    </h1>
-                    <p className="text-xs text-teal-100 font-medium">
-                      Sistem Monitoring Suara, Quick Count & Integrasi GAS
-                    </p>
-                  </div>
-                </div>
-
-                {/* Navigation Tabs */}
-                <nav className="flex space-x-1.5 bg-black/20 p-1.5 rounded-xl border border-white/5">
-                  <button
-                    onClick={() => setCurrentTab("dashboard")}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${currentTab === "dashboard" ? "bg-white text-blue-900 shadow" : "text-white hover:bg-white/10"}`}
-                  >
-                    <i className="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
-                  </button>
-                  <button
-                    onClick={() => handleTabClick("input")}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${currentTab === "input" ? "bg-white text-blue-900 shadow" : "text-white hover:bg-white/10"}`}
-                  >
-                    <i className="fa-solid fa-pen-to-square mr-1.5"></i> Input
-                    TPS
-                  </button>
-                  <button
-                    onClick={() => handleTabClick("data")}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${currentTab === "data" ? "bg-white text-blue-900 shadow" : "text-white hover:bg-white/10"}`}
-                  >
-                    <i className="fa-solid fa-database mr-1.5"></i> Rekap TPS
-                  </button>
-                  <button
-                    onClick={() => setCurrentTab("config")}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${currentTab === "config" ? "bg-white text-blue-900 shadow" : "text-white hover:bg-white/10"}`}
-                  >
-                    <i className="fa-solid fa-code mr-1.5"></i> API & Deploy
-                  </button>
-                </nav>
-              </div>
-            </header>
-
-            {/* Notification Banner */}
-            {notification && (
-              <div
-                className={`p-4 text-center text-sm font-semibold transition-all shadow-inner flex items-center justify-center space-x-2 ${
-                  notification.type === "success"
-                    ? "bg-emerald-50 text-emerald-800 border-b border-emerald-200"
-                    : notification.type === "error"
-                      ? "bg-rose-50 text-rose-800 border-b border-rose-200"
-                      : "bg-blue-50 text-blue-800"
-                }`}
+  <body class="bg-[#0f172a] text-white">
+    <!-- CONTAINER SCROLL INTERNAL -->
+    <div
+      class="app-container w-full p-4 sm:p-6 md:p-8 flex flex-col justify-between"
+    >
+      <!-- WRAPPER UTAMA -->
+      <div class="w-full max-w-7xl mx-auto space-y-6 flex-grow flex flex-col">
+        <!-- ========================================== -->
+        <!-- TAMPILAN 1: MENU UTAMA (HOME)              -->
+        <!-- ========================================== -->
+        <div
+          id="page-home"
+          class="w-full max-w-3xl mx-auto space-y-6 animate-up flex-grow"
+        >
+          <!-- Banner Utama Atas -->
+          <div
+            class="banner-blue p-6 md:p-10 shadow-xl text-center md:text-left relative flex flex-col md:flex-row items-center justify-between gap-6"
+          >
+            <div class="z-10 w-full md:w-auto">
+              <span
+                class="bg-blue-500/40 text-blue-100 text-[10px] md:text-xs px-3 md:px-4 py-1.5 rounded-full font-bold uppercase tracking-wider border border-white/10 inline-block mb-3 md:mb-0"
               >
-                <i
-                  className={
-                    notification.type === "success"
-                      ? "fa-solid fa-circle-check text-emerald-500"
-                      : "fa-solid fa-circle-exclamation text-rose-500"
-                  }
-                ></i>
-                <span>{notification.message}</span>
+                📍 PEMILIHAN DESA CIBUNTU
+              </span>
+              <h2
+                class="text-2xl md:text-3xl font-extrabold text-white mt-2 mb-2 tracking-wide"
+              >
+                DASHBOARD INFORMASI
+              </h2>
+              <p class="text-blue-100/80 text-xs md:text-sm italic">
+                "Harta sejati adalah persaudaraan, sukseskan pemilu yang damai."
+              </p>
+            </div>
+
+            <div
+              class="z-10 bg-black/30 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center w-full md:w-auto"
+            >
+              <p
+                class="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1"
+              >
+                Total Suara Masuk
+              </p>
+              <div
+                class="text-2xl md:text-4xl font-black text-white"
+                id="home-total-suara"
+              >
+                0
               </div>
-            )}
-
-            {/* Main Content Area */}
-            <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
-              {/* Connection Warning Header */}
-              {!apiConnected && currentTab !== "config" && (
-                <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 shadow-sm">
-                  <div className="flex items-center space-x-3 text-amber-800 text-sm">
-                    <i className="fa-solid fa-triangle-exclamation text-xl text-amber-500"></i>
-                    <div>
-                      <p className="font-bold">
-                        Mode Preview / Simulasi Lokal Aktif
-                      </p>
-                      <p className="text-amber-700 text-xs">
-                        Aplikasi belum terhubung dengan API Apps Script Anda.
-                        Data masih disimpan sementara di memory browser.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setCurrentTab("config")}
-                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-colors"
-                  >
-                    Konfigurasi Sekarang{" "}
-                    <i className="fa-solid fa-arrow-right ml-1"></i>
-                  </button>
-                </div>
-              )}
-
-              {apiConnected && (
-                <div className="mb-6 p-3 bg-teal-50 text-teal-800 rounded-xl border border-teal-200 text-xs flex justify-between items-center font-semibold">
-                  <span className="flex items-center">
-                    <span className="h-2 w-2 rounded-full bg-teal-500 mr-2 animate-pulse"></span>{" "}
-                    Terhubung ke Database Live: Sheets API Aktif
-                  </span>
-                  <button
-                    onClick={() => fetchLiveData()}
-                    className="px-2.5 py-1 bg-white hover:bg-teal-100 border border-teal-300 rounded text-[10px] text-teal-800 transition-colors uppercase"
-                  >
-                    <i className="fa-solid fa-rotate mr-1"></i> Refresh Data
-                  </button>
-                </div>
-              )}
-
-              {}
-              {/* 1. DASHBOARD VIEW */}
-              {currentTab === "dashboard" && (
-                <div className="space-y-8 animate-fadeIn">
-                  {/* Statistical Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="glass-card p-5 rounded-2xl flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Total DPT Terdaftar
-                        </p>
-                        <p className="text-2xl font-black text-slate-900 mt-1">
-                          {totalDpt.toLocaleString("id-ID")}
-                        </p>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          Jumlah hak pilih kumulatif
-                        </span>
-                      </div>
-                      <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                        <i className="fa-solid fa-users text-2xl"></i>
-                      </div>
-                    </div>
-
-                    <div className="glass-card p-5 rounded-2xl flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Partisipasi Pemilih
-                        </p>
-                        <p className="text-2xl font-black text-slate-900 mt-1">
-                          {partisipasiPersen}%
-                        </p>
-                        <div className="w-24 bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                          <div
-                            className="bg-emerald-500 h-full"
-                            style={{ width: `${partisipasiPersen}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-                        <i className="fa-solid fa-user-check text-2xl"></i>
-                      </div>
-                    </div>
-
-                    <div className="glass-card p-5 rounded-2xl flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          TPS Terinput
-                        </p>
-                        <p className="text-2xl font-black text-slate-900 mt-1">
-                          {tpsTerinput} TPS
-                        </p>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          Dari seluruh total TPS terdaftar
-                        </span>
-                      </div>
-                      <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
-                        <i className="fa-solid fa-box-archive text-2xl"></i>
-                      </div>
-                    </div>
-
-                    <div className="glass-card p-5 rounded-2xl flex items-center justify-between shadow-sm">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Suara Tidak Sah / Abstain
-                        </p>
-                        <p className="text-2xl font-black text-slate-900 mt-1">
-                          {(totalTidakSah + totalGolput).toLocaleString(
-                            "id-ID",
-                          )}
-                        </p>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          Batal: {totalTidakSah} | Golput: {totalGolput}
-                        </span>
-                      </div>
-                      <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-                        <i className="fa-solid fa-file-circle-xmark text-2xl"></i>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Candidates Grid & Visualization Row */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Candidates Leaders */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <h3 className="text-lg font-extrabold text-slate-900 flex items-center">
-                        <span className="inline-block w-2.5 h-6 bg-blue-900 rounded mr-2.5"></span>
-                        Hasil Suara Kandidat Terkini (Real-Time)
-                      </h3>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {candidates.map((cand, idx) => {
-                          const barColors = [
-                            "bg-blue-900",
-                            "bg-teal-600",
-                            "bg-amber-500",
-                            "bg-red-500",
-                          ];
-                          const bgColors = [
-                            "bg-blue-50/50",
-                            "bg-teal-50/50",
-                            "bg-amber-50/50",
-                            "bg-rose-50/50",
-                          ];
-                          const borderColors = [
-                            "border-blue-100",
-                            "border-teal-100",
-                            "border-amber-100",
-                            "border-rose-100",
-                          ];
-                          return (
-                            <div
-                              key={cand.id}
-                              className={`p-4 rounded-2xl border ${borderColors[idx]} ${bgColors[idx]} flex flex-col justify-between shadow-sm`}
-                            >
-                              <div className="flex items-center space-x-3.5">
-                                <img
-                                  src={cand.foto}
-                                  alt={cand.nama}
-                                  className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm"
-                                />
-                                <div className="flex-grow">
-                                  <span className="text-[10px] font-bold text-slate-400">
-                                    NOMOR URUT {cand.id}
-                                  </span>
-                                  <h4 className="text-sm font-extrabold text-slate-950 truncate max-w-[150px]">
-                                    {cand.nama.replace(/Kandidat \d - /, "")}
-                                  </h4>
-                                </div>
-                              </div>
-
-                              <div className="mt-5">
-                                <div className="flex justify-between items-baseline mb-1">
-                                  <span className="text-xs text-slate-500 font-semibold">
-                                    Perolehan Suara
-                                  </span>
-                                  <span className="text-lg font-black text-slate-900">
-                                    {cand.persentase}%
-                                  </span>
-                                </div>
-                                <div className="w-full bg-slate-200/80 h-3 rounded-full overflow-hidden mb-1.5">
-                                  <div
-                                    className={`h-full ${barColors[idx]} rounded-full transition-all duration-700`}
-                                    style={{ width: `${cand.persentase}%` }}
-                                  ></div>
-                                </div>
-                                <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-                                  <span>
-                                    {cand.totalSuara.toLocaleString("id-ID")}{" "}
-                                    Suara
-                                  </span>
-                                  <span>Dukungan Desa</span>
-                                </div>
-                              </div>
-
-                              {/* Visi Misi Accordion */}
-                              <div className="mt-4 pt-3 border-t border-slate-100/50">
-                                <details className="group">
-                                  <summary className="list-none flex justify-between items-center text-[10px] text-slate-500 font-bold cursor-pointer hover:text-slate-800">
-                                    <span>VISI & MISI KANDIDAT</span>
-                                    <i className="fa-solid fa-chevron-down transition-transform group-open:rotate-180"></i>
-                                  </summary>
-                                  <div className="mt-2 text-[11px] text-slate-600 bg-white/60 p-2.5 rounded-lg border border-slate-100 space-y-1.5 leading-relaxed">
-                                    <p>
-                                      <strong className="text-slate-800 font-semibold">
-                                        Visi:
-                                      </strong>{" "}
-                                      {cand.visi}
-                                    </p>
-                                    <p className="whitespace-pre-line">
-                                      <strong className="text-slate-800 font-semibold">
-                                        Misi:
-                                      </strong>
-                                      <br />
-                                      {cand.misi}
-                                    </p>
-                                  </div>
-                                </details>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Doughnut Chart Visualization */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-extrabold text-slate-900 flex items-center">
-                        <span className="inline-block w-2.5 h-6 bg-teal-600 rounded mr-2.5"></span>
-                        Komposisi Suara Masuk
-                      </h3>
-                      <div className="glass-card p-5 rounded-2xl shadow-sm flex flex-col justify-between items-center h-[345px]">
-                        <div className="relative w-full h-[220px]">
-                          {totalSuaraSahSemua === 0 ? (
-                            <div className="absolute inset-0 flex flex-col justify-center items-center text-slate-400">
-                              <i className="fa-solid fa-chart-line text-4xl mb-2"></i>
-                              <p className="text-xs font-semibold">
-                                Belum ada suara masuk
-                              </p>
-                            </div>
-                          ) : (
-                            <canvas ref={chartRef}></canvas>
-                          )}
-                        </div>
-                        <div className="w-full text-center border-t border-slate-100 pt-3 text-[11px] font-semibold text-slate-500">
-                          Total Suara Sah Masuk:{" "}
-                          <span className="text-slate-950 font-bold">
-                            {totalSuaraSahSemua.toLocaleString("id-ID")} Suara
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. INPUT TPS FORM */}
-              {currentTab === "input" && (
-                <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        Form Input Hasil Suara TPS
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Gunakan formulir ini untuk merekam data pemungutan suara
-                        resmi per TPS.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setIsAuthenticated(false)}
-                      className="px-3 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-semibold transition-colors"
-                    >
-                      <i className="fa-solid fa-lock-open mr-1.5"></i> Kunci
-                      Admin
-                    </button>
-                  </div>
-
-                  <form
-                    onSubmit={handleFormSubmit}
-                    className="glass-card p-6 rounded-2xl shadow-md space-y-6"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
-                          Nomor / Nama TPS *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Contoh: TPS 01, TPS 02"
-                          value={formTps}
-                          onChange={(e) => setFormTps(e.target.value)}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
-                          Ketua TPS *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Nama Ketua KPPS"
-                          value={formKetua}
-                          onChange={(e) => setFormKetua(e.target.value)}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
-                          Total DPT TPS *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          required
-                          value={formDpt}
-                          onChange={(e) => setFormDpt(Number(e.target.value))}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Candidates Score */}
-                    <div className="border-t border-slate-100 pt-5 space-y-4">
-                      <h4 className="text-xs font-extrabold text-blue-900 uppercase tracking-widest flex items-center">
-                        <i className="fa-solid fa-check-double mr-2"></i>{" "}
-                        Perolehan Suara Kandidat
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                          <label className="block text-[11px] font-bold text-blue-900 mb-1">
-                            Kandidat 1
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={formKand1}
-                            onChange={(e) =>
-                              setFormKand1(Number(e.target.value))
-                            }
-                            className="w-full px-3 py-1.5 border border-blue-200 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
-                          <label className="block text-[11px] font-bold text-teal-900 mb-1">
-                            Kandidat 2
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={formKand2}
-                            onChange={(e) =>
-                              setFormKand2(Number(e.target.value))
-                            }
-                            className="w-full px-3 py-1.5 border border-teal-200 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-teal-500"
-                          />
-                        </div>
-                        <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
-                          <label className="block text-[11px] font-bold text-amber-950 mb-1">
-                            Kandidat 3
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={formKand3}
-                            onChange={(e) =>
-                              setFormKand3(Number(e.target.value))
-                            }
-                            className="w-full px-3 py-1.5 border border-amber-200 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500"
-                          />
-                        </div>
-                        <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
-                          <label className="block text-[11px] font-bold text-rose-900 mb-1">
-                            Kandidat 4
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={formKand4}
-                            onChange={(e) =>
-                              setFormKand4(Number(e.target.value))
-                            }
-                            className="w-full px-3 py-1.5 border border-rose-200 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-rose-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Additional Fields & Live Summary */}
-                    <div className="border-t border-slate-100 pt-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase mb-1.5">
-                          Suara Tidak Sah (Kertas Rusak/Abstain) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formTidakSah}
-                          onChange={(e) =>
-                            setFormTidakSah(Number(e.target.value))
-                          }
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                      </div>
-
-                      {/* Dynamic Math Verification Box */}
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
-                        <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider block">
-                          Verifikasi Perhitungan Real-Time:
-                        </span>
-                        <div className="flex justify-between">
-                          <span>Total Suara Sah (Kandidat 1-4):</span>
-                          <span className="font-bold text-slate-900">
-                            {totalFormSuaraSah}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Pemilih Hadir (Sah + Tidak Sah):</span>
-                          <span className="font-bold text-slate-900">
-                            {totalFormPemilihHadir}
-                          </span>
-                        </div>
-                        <div className="flex justify-between border-t border-slate-200 pt-1 text-blue-900">
-                          <span>Pemilih Tidak Hadir / Golput (Otomatis):</span>
-                          <span className="font-bold">{calculatedGolput}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={resetForm}
-                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition-colors"
-                      >
-                        Batalkan
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="px-5 py-2.5 gradient-brand text-white font-bold rounded-xl text-xs shadow-md hover:brightness-110 transition-all flex items-center"
-                      >
-                        {isLoading ? (
-                          <React.Fragment>
-                            <i className="fa-solid fa-circle-notch animate-spin mr-2"></i>{" "}
-                            Mengirim Data...
-                          </React.Fragment>
-                        ) : (
-                          <React.Fragment>
-                            <i className="fa-solid fa-cloud-arrow-up mr-2"></i>{" "}
-                            Simpan Data Suara TPS
-                          </React.Fragment>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* 3. REKAP DATA TPS TABLE */}
-              {currentTab === "data" && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-                    <div>
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        Lembar Rekapitulasi Suara Per TPS
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Daftar rincian log audit perolehan suara dari seluruh
-                        TPS desa Cibuntu.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setIsAuthenticated(false)}
-                      className="px-3 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-semibold transition-colors self-end"
-                    >
-                      <i className="fa-solid fa-lock-open mr-1.5"></i> Kunci
-                      Admin
-                    </button>
-                  </div>
-
-                  <div className="glass-card rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider">
-                            <th className="p-4">TPS</th>
-                            <th className="p-4">Ketua KPPS</th>
-                            <th className="p-4 text-center">DPT</th>
-                            <th className="p-4 text-center bg-blue-50/50 text-blue-900">
-                              Kand 1
-                            </th>
-                            <th className="p-4 text-center bg-teal-50/50 text-teal-900">
-                              Kand 2
-                            </th>
-                            <th className="p-4 text-center bg-amber-50/50 text-amber-900">
-                              Kand 3
-                            </th>
-                            <th className="p-4 text-center bg-rose-50/50 text-rose-900">
-                              Kand 4
-                            </th>
-                            <th className="p-4 text-center font-bold">Sah</th>
-                            <th className="p-4 text-center">Tidak Sah</th>
-                            <th className="p-4 text-center">Golput</th>
-                            <th className="p-4 text-center">Tingkat Hadir</th>
-                            <th className="p-4 text-center">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {tpsRecords.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan="12"
-                                className="p-8 text-center text-slate-400 font-semibold"
-                              >
-                                <i className="fa-solid fa-box-open text-3xl mb-2 block"></i>
-                                Tidak ada rekaman TPS. Gunakan tab 'Input TPS'
-                                untuk mengisi.
-                              </td>
-                            </tr>
-                          ) : (
-                            tpsRecords.map((r, idx) => {
-                              const rate =
-                                r.dpt > 0
-                                  ? ((r.pemilihHadir / r.dpt) * 100).toFixed(1)
-                                  : 0;
-                              return (
-                                <tr
-                                  key={idx}
-                                  className="hover:bg-slate-50 transition-colors"
-                                >
-                                  <td className="p-4 font-extrabold text-slate-950">
-                                    {r.tps}
-                                  </td>
-                                  <td className="p-4 font-semibold text-slate-600">
-                                    {r.ketua}
-                                  </td>
-                                  <td className="p-4 text-center font-bold">
-                                    {r.dpt}
-                                  </td>
-                                  <td className="p-4 text-center font-bold bg-blue-50/30 text-blue-950">
-                                    {r.kandidat1}
-                                  </td>
-                                  <td className="p-4 text-center font-bold bg-teal-50/30 text-teal-950">
-                                    {r.kandidat2}
-                                  </td>
-                                  <td className="p-4 text-center font-bold bg-amber-50/30 text-amber-950">
-                                    {r.kandidat3}
-                                  </td>
-                                  <td className="p-4 text-center font-bold bg-rose-50/30 text-rose-950">
-                                    {r.kandidat4}
-                                  </td>
-                                  <td className="p-4 text-center font-bold text-slate-900 bg-slate-50">
-                                    {r.suaraSah}
-                                  </td>
-                                  <td className="p-4 text-center font-medium text-slate-500">
-                                    {r.tidakSah}
-                                  </td>
-                                  <td className="p-4 text-center font-medium text-slate-400">
-                                    {r.golput}
-                                  </td>
-                                  <td className="p-4 text-center">
-                                    <span
-                                      className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                                        Number(rate) > 85
-                                          ? "bg-emerald-50 text-emerald-700"
-                                          : "bg-blue-50 text-blue-700"
-                                      }`}
-                                    >
-                                      {rate}%
-                                    </span>
-                                  </td>
-                                  <td className="p-4 text-center">
-                                    <button
-                                      onClick={() => handleDeleteTps(r.tps)}
-                                      className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg border border-rose-200 transition-colors"
-                                      title="Hapus rekaman TPS"
-                                    >
-                                      <i className="fa-solid fa-trash-can text-[11px]"></i>
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    {tpsRecords.length > 0 && (
-                      <div className="bg-slate-50 p-4 border-t border-slate-200 text-[11px] font-bold text-slate-500 flex flex-wrap justify-between items-center gap-2">
-                        <span>JUMLAH REKAPITULASI DARI {tpsTerinput} TPS</span>
-                        <div className="flex space-x-4">
-                          <span>
-                            DPT TOTAL:{" "}
-                            <span className="text-slate-950 font-black">
-                              {totalDpt}
-                            </span>
-                          </span>
-                          <span>
-                            TOTAL SUARA KANDIDAT:{" "}
-                            <span className="text-slate-950 font-black">
-                              {totalSuaraSahSemua}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {}
-              {/* 4. CONFIGURATION / DEVELOPER HUB */}
-              {currentTab === "config" && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div>
-                    <h3 className="text-lg font-extrabold text-slate-900">
-                      Pengaturan API Google Apps Script & Deployment GitHub
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Hubungkan halaman statis GitHub Pages Anda dengan Database
-                      Google Sheets melalui API GAS.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Panel: App URL setting */}
-                    <div className="lg:col-span-1 space-y-4">
-                      <div className="glass-card p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                          URL Apps Script API
-                        </h4>
-
-                        <div>
-                          <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">
-                            Spreadsheet ID Terpilih
-                          </label>
-                          <div className="p-2.5 bg-slate-50 rounded-lg text-xs font-mono break-all text-slate-600 border border-slate-200">
-                            {spreadsheetId}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1.5">
-                            Web App URL *
-                          </label>
-                          <input
-                            type="url"
-                            placeholder="https://script.google.com/macros/s/.../exec"
-                            value={webAppUrl}
-                            onChange={(e) => {
-                              setWebAppUrl(e.target.value);
-                              localStorage.setItem(
-                                "pilkades_gas_url",
-                                e.target.value,
-                              );
-                              if (!e.target.value) setApiConnected(false);
-                            }}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
-                            Masukkan alamat URL web app hasil deploy Apps Script
-                            Anda untuk sinkronisasi database langsung.
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={() => fetchLiveData(webAppUrl)}
-                          disabled={!webAppUrl || isLoading}
-                          className="w-full py-2 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center"
-                        >
-                          {isLoading ? (
-                            <i className="fa-solid fa-circle-notch animate-spin mr-1.5"></i>
-                          ) : (
-                            <i className="fa-solid fa-plug mr-1.5"></i>
-                          )}
-                          Uji & Hubungkan API
-                        </button>
-                      </div>
-
-                      <div className="glass-card p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 text-xs leading-relaxed">
-                        <h4 className="text-[11px] font-black text-emerald-800 uppercase tracking-wider flex items-center">
-                          <i className="fa-solid fa-shield-halved mr-1.5"></i>{" "}
-                          Keamanan & Kode PIN
-                        </h4>
-                        <p className="text-slate-600 text-[11px]">
-                          Demi mencegah sabotase suara oleh pengunjung biasa,
-                          halaman input & hapus dilindungi PIN Keamanan.
-                        </p>
-                        <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-100 text-emerald-900 font-bold text-center">
-                          PIN Default Simulasi: 2026
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Panel: Code.gs copy code and guide */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <div className="glass-card p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                        <div className="flex justify-between items-center flex-wrap gap-2">
-                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                            Langkah 1: Salin Kode `kode.gs`
-                          </h4>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(backendCode);
-                              showToast(
-                                "Kode Server GAS disalin ke clipboard!",
-                                "success",
-                              );
-                            }}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 text-[10px] text-slate-700 font-bold transition-all"
-                          >
-                            <i className="fa-regular fa-copy mr-1"></i> Copy
-                            Code
-                          </button>
-                        </div>
-
-                        <div className="relative">
-                          <pre className="p-4 bg-slate-900 text-emerald-400 rounded-xl overflow-x-auto text-[10px] font-mono h-[250px] leading-relaxed select-all">
-                            {backendCode}
-                          </pre>
-                        </div>
-
-                        <div className="space-y-3.5 pt-2">
-                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                            Langkah 2: Deployment Panduan
-                          </h4>
-                          <ol className="list-decimal pl-4 text-xs text-slate-600 space-y-2 leading-relaxed">
-                            <li>
-                              Buka Google Spreadsheet Pilkades Anda:{" "}
-                              <a
-                                href={`https://docs.google.com/spreadsheets/d/${spreadsheetId}`}
-                                target="_blank"
-                                className="text-blue-900 underline font-semibold"
-                              >
-                                Buka Spreadsheet
-                              </a>
-                              .
-                            </li>
-                            <li>
-                              Buka menu <strong>Ekstensi (Extensions)</strong>{" "}
-                              &gt; pilih <strong>Apps Script</strong>.
-                            </li>
-                            <li>
-                              Hapus semua kode bawaan di dalam berkas default{" "}
-                              <code className="bg-slate-100 px-1 rounded text-red-600">
-                                Code.gs
-                              </code>
-                              , lalu <strong>tempelkan (paste)</strong> seluruh
-                              kode di atas.
-                            </li>
-                            <li>
-                              Klik tombol <strong>Deploy (Terapkan)</strong> di
-                              kanan atas &gt; pilih{" "}
-                              <strong>Deployment Baru (New Deployment)</strong>.
-                            </li>
-                            <li>
-                              Pilih Jenis sebagai{" "}
-                              <strong>Aplikasi Web (Web App)</strong>. Isikan
-                              konfigurasi:
-                              <ul className="list-disc pl-5 mt-1 space-y-1 text-[11px]">
-                                <li>
-                                  <strong>
-                                    Jalankan Sebagai (Execute as):
-                                  </strong>{" "}
-                                  "Saya" (Akun Google Anda).
-                                </li>
-                                <li>
-                                  <strong>
-                                    Siapa yang memiliki akses (Who has access):
-                                  </strong>{" "}
-                                  "Siapa saja" (Anyone).
-                                </li>
-                              </ul>
-                            </li>
-                            <li>
-                              Klik <strong>Terapkan (Deploy)</strong>. Berikan
-                              izin otorisasi saat diminta (Pilih
-                              Advanced/Lanjutan &gt; Go to Pilkades (unsafe)).
-                            </li>
-                            <li>
-                              Salin URL Aplikasi Web yang diberikan, lalu paste
-                              di kolom input{" "}
-                              <strong>URL Apps Script API</strong> di samping
-                              kiri!
-                            </li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </main>
-
-            {/* Footer */}
-            <footer className="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-12">
-              <div className="max-width-7xl mx-auto px-4 space-y-2">
-                <p className="font-bold text-slate-300">
-                  Pilkades Desa Cibuntu 2026 - Panitia Pemilihan Kepala Desa
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  Aplikasi ditenagai oleh Google Apps Script JSON API & GitHub
-                  Pages. 100% Serverless & Efisien.
-                </p>
-              </div>
-            </footer>
-
-            {/* PIN Security Modal */}
-            {showPinModal && (
-              <div className="fixed inset-0 bg-slate-900/60 backdrop-filter backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-scaleUp">
-                  <div className="text-center">
-                    <div className="mx-auto w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-xl mb-3">
-                      <i className="fa-solid fa-lock"></i>
-                    </div>
-                    <h3 className="text-base font-extrabold text-slate-900">
-                      Verifikasi PIN Admin
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Anda mengakses menu khusus Panitia/Admin. Masukkan PIN
-                      keamanan Anda.
-                    </p>
-                  </div>
-
-                  <div>
-                    <input
-                      type="password"
-                      placeholder="Ketik PIN Default: 2026"
-                      value={authPin}
-                      onChange={(e) => setAuthPin(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && verifyPIN()}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-xl text-center text-lg font-bold tracking-widest outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        setShowPinModal(false);
-                        setPendingTab(null);
-                      }}
-                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition-colors"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={verifyPIN}
-                      className="flex-1 py-2.5 gradient-brand text-white font-bold rounded-xl text-xs shadow-md transition-all"
-                    >
-                      Verifikasi PIN
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
+
+          <!-- Grid Menu Kotak/Ikon Bulat -->
+          <div
+            class="bg-white/[0.02] rounded-[24px] p-6 md:p-10 border border-white/5 shadow-2xl"
+          >
+            <p
+              class="text-[11px] md:text-sm font-bold uppercase text-slate-400 tracking-widest mb-8 text-center"
+            >
+              Silahkan Pilih Menu Layanan
+            </p>
+
+            <div
+              class="grid grid-cols-3 md:grid-cols-4 gap-y-8 gap-x-4 text-center"
+            >
+              <button
+                onclick="switchPage('quick-count')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-blue-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-blue-600/30 group-hover:bg-blue-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  📊
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Quick Count</span
+                >
+              </button>
+
+              <button
+                onclick="switchPage('profil')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-emerald-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  👤
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Profil</span
+                >
+              </button>
+
+              <button
+                onclick="switchPage('visi-misi')"
+                class="flex flex-col items-center gap-3 group active:scale-95 transition-transform"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-amber-600 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-amber-600/30 group-hover:bg-amber-500 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  📜
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-200 tracking-wide"
+                  >Visi Misi</span
+                >
+              </button>
+
+              <button
+                onclick="
+                  showInfoModal(
+                    'Dashboard Real-Time Quick Count Desa Cibuntu 2026. Data diupdate secara aman & berkala langsung dari Google Spreadsheet Panitia Pemilihan.',
+                  )
+                "
+                class="col-span-3 md:col-span-1 flex flex-col items-center gap-3 group active:scale-95 transition-transform mt-4 md:mt-0"
+              >
+                <div
+                  class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-700 flex items-center justify-center text-xl md:text-2xl text-white shadow-lg shadow-slate-700/30 group-hover:bg-slate-600 group-hover:-translate-y-1 transition-all mx-auto"
+                >
+                  ℹ️
+                </div>
+                <span
+                  class="text-xs md:text-sm font-semibold text-slate-300 tracking-wide"
+                  >Bantuan</span
+                >
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 2: HALAMAN GRAFIK QUICK COUNT     -->
+        <!-- ========================================== -->
+        <div
+          id="page-quick-count"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 gap-4"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="w-full sm:w-auto justify-center text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-2.5 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <button
+              onclick="fetchData()"
+              class="w-full sm:w-auto justify-center text-xs md:text-sm bg-white hover:bg-slate-200 text-slate-900 px-6 py-2.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg"
+            >
+              🔄 Refresh Data
+            </button>
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start"
+          >
+            <div
+              class="md:col-span-7 lg:col-span-8 card-gofood p-5 md:p-8 w-full"
+            >
+              <div class="flex items-center gap-2 mb-6">
+                <div class="w-2 h-5 md:h-6 bg-blue-500 rounded-sm"></div>
+                <h3
+                  class="text-sm md:text-base font-bold text-slate-300 uppercase tracking-wider"
+                >
+                  Grafik Hasil Suara (%)
+                </h3>
+              </div>
+              <div class="relative h-[280px] md:h-[450px] w-full">
+                <canvas id="mainChart"></canvas>
+              </div>
+            </div>
+
+            <div
+              class="md:col-span-5 lg:col-span-4 flex flex-col gap-3 md:gap-4 w-full"
+              id="candidate-list"
+            >
+              <div class="text-slate-500 text-center py-10 card-gofood w-full">
+                Memuat data perolehan...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 3: HALAMAN PROFIL                 -->
+        <!-- ========================================== -->
+        <div
+          id="page-profil"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <span
+              class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider px-2"
+              >Profil Kontestan</span
+            >
+          </div>
+
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            id="photo-grid"
+          >
+            <div
+              class="col-span-2 md:col-span-4 text-slate-500 text-center py-10 card-gofood"
+            >
+              Memuat profil kontestan...
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAMPILAN 4: HALAMAN VISI & MISI            -->
+        <!-- ========================================== -->
+        <div
+          id="page-visi-misi"
+          class="hidden w-full space-y-4 md:space-y-6 animate-up flex-grow"
+        >
+          <div
+            class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10"
+          >
+            <button
+              onclick="switchPage('home')"
+              class="text-xs md:text-sm text-blue-400 font-bold flex items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/20 transition-all"
+            >
+              ⬅ Menu Utama
+            </button>
+            <span
+              class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider px-2"
+              >Visi & Misi</span
+            >
+          </div>
+
+          <div
+            class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6"
+            id="visi-misi-container"
+          >
+            <!-- Di-render oleh Javascript -->
+          </div>
+        </div>
+
+        <!-- FOOTER CUSTOM BRANDING PERSONAL HERMAWAN -->
+        <footer
+          class="pt-6 mt-8 border-t border-slate-800/80 text-center text-slate-500 text-[11px] md:text-sm tracking-wide w-full pb-2"
+        >
+          <p>
+            Copyright &copy; 2026
+            <span class="text-blue-400 font-semibold">Hermawan</span>. All
+            Rights Reserved.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <!-- END OF APP CONTAINER -->
+
+    <!-- POP-UP MODAL DETAIL LENGKAP PROFIL/VISI MISI -->
+    <div
+      id="profile-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
+    >
+      <div
+        class="card-gofood bg-slate-900/95 border border-white/20 p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl space-y-4 relative transform scale-95 transition-transform"
+      >
+        <button
+          onclick="closeModal()"
+          class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl font-semibold leading-none"
+        >
+          &times;
+        </button>
+        <div class="text-center mt-2">
+          <img
+            id="modal-img"
+            src=""
+            class="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto object-cover border-4 border-blue-500 shadow-xl"
+          />
+          <h3
+            id="modal-nama"
+            class="text-xl md:text-2xl font-bold mt-4 text-white"
+          >
+            Nama Kandidat
+          </h3>
+          <p
+            id="modal-no"
+            class="text-blue-400 font-bold text-xs md:text-sm mt-1 bg-blue-500/10 inline-block px-3 py-1 rounded-full border border-blue-500/20"
+          >
+            Kandidat No. 0
+          </p>
+        </div>
+        <div
+          class="border-t border-white/10 pt-4 mt-4 text-sm text-slate-300 bg-black/40 p-5 rounded-2xl space-y-2"
+        >
+          <p
+            class="font-bold text-white uppercase tracking-wider text-blue-300 text-xs md:text-sm mb-2"
+          >
+            Visi & Misi Utama:
+          </p>
+          <p
+            id="modal-visi-teks"
+            class="italic leading-relaxed text-slate-300 text-xs md:text-sm"
+          >
+            "Teks Visi Misi"
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- POP-UP MODAL INFORMASI / BANTUAN KUSTOM (ANTI-ALERT) -->
+    <div
+      id="info-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-all"
+    >
+      <div
+        class="card-gofood bg-slate-900/95 border border-white/20 p-6 max-w-sm w-full shadow-2xl space-y-4 relative transform scale-95 transition-transform"
+      >
+        <button
+          onclick="closeInfoModal()"
+          class="absolute top-4 right-5 text-slate-400 hover:text-white text-3xl font-semibold leading-none"
+        >
+          &times;
+        </button>
+        <div class="flex flex-col items-center text-center space-y-3">
+          <div
+            class="w-12 h-12 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-2xl"
+          >
+            ℹ️
+          </div>
+          <h3 class="text-lg font-bold text-white">Informasi Aplikasi</h3>
+          <p
+            id="info-modal-text"
+            class="text-xs md:text-sm text-slate-300 leading-relaxed"
+          ></p>
+        </div>
+        <div class="pt-2">
+          <button
+            onclick="closeInfoModal()"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl text-xs md:text-sm transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIKA PEMROSESAN UTAMA DASHBOARD -->
+    <script>
+      let myChart;
+      let localDataCache = [];
+
+      // Sistem Perpindahan Halaman Konten (Tab Router)
+      function switchPage(pageId) {
+        document.getElementById("page-home").classList.add("hidden");
+        document.getElementById("page-quick-count").classList.add("hidden");
+        document.getElementById("page-profil").classList.add("hidden");
+        document.getElementById("page-visi-misi").classList.add("hidden");
+
+        if (pageId === "home") {
+          document.getElementById("page-home").classList.remove("hidden");
+        } else if (pageId === "quick-count") {
+          document
+            .getElementById("page-quick-count")
+            .classList.remove("hidden");
+
+          // FIX ANIMASI ULTRA STABIL: Selesaikan resize layout & trigger ulang animasi Chart.js
+          if (myChart) {
+            myChart.resize(); // Hitung ulang pixel kontainer canvas versi desktop/seluler
+            const currentData = [...myChart.data.datasets[0].data];
+
+            if (currentData.length > 0) {
+              // Tarik batang grafik ke 0 secara instan tanpa animasi terlebih dahulu
+              myChart.data.datasets[0].data = currentData.map(() => 0);
+              myChart.update("none");
+
+              // Naikkan batang dengan efek transisi yang dramatis setelah jeda sinkronisasi browser
+              setTimeout(() => {
+                myChart.data.datasets[0].data = currentData;
+                myChart.update();
+              }, 150);
+            }
+          }
+        } else if (pageId === "profil") {
+          document.getElementById("page-profil").classList.remove("hidden");
+        } else if (pageId === "visi-misi") {
+          document.getElementById("page-visi-misi").classList.remove("hidden");
+        }
+
+        // Auto scroll to top container saat ganti menu
+        document.querySelector(".app-container").scrollTo(0, 0);
+      }
+
+      function initChart() {
+        const ctx = document.getElementById("mainChart").getContext("2d");
+        const isDesktop = window.innerWidth >= 768;
+
+        myChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                data: [],
+                backgroundColor: ["#2563eb", "#10b981", "#f59e0b", "#ec4899"],
+                borderRadius: isDesktop ? 12 : 6,
+                barThickness: isDesktop ? 60 : 28,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  color: "#64748b",
+                  font: { size: isDesktop ? 12 : 10 },
+                },
+                grid: { color: "#1e293b" },
+              },
+              x: {
+                ticks: {
+                  color: "#f8fafc",
+                  font: { size: isDesktop ? 14 : 11, weight: "bold" },
+                },
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      function fetchData() {
+        const GAS_ENDPOINT =
+          "https://script.google.com/macros/s/AKfycbxy1WFNw-IJrTKIMYCBcBWxm66_FPfh-xpKyW70G7lP7kNFCirSBFXQ_wg-j45lHoVZZQ/exec";
+
+        if (
+          typeof google !== "undefined" &&
+          google.script &&
+          google.script.run
+        ) {
+          // Jika dijalankan sebagai HTML service di Google Apps Script
+          google.script.run
+            .withSuccessHandler((res) => {
+              renderUI(res);
+            })
+            .getDataDashboard();
+          return;
+        }
+
+        // Jika app berjalan di browser biasa / dari file lokal, gunakan endpoint JSON GAS
+        fetch(GAS_ENDPOINT)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Gagal mengambil data dari GAS");
+            }
+            return response.json();
+          })
+          .then((res) => {
+            renderUI(res);
+          })
+          .catch((error) => {
+            console.warn(error);
+
+            const mockResponse = {
+              totalSah: 4850,
+              kandidat: [
+                {
+                  nama: "H. Ahmad Fauzi",
+                  suara: 1850,
+                  persentase: 38.1,
+                  foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+                },
+                {
+                  nama: "Drs. M. Ridwan",
+                  suara: 1420,
+                  persentase: 29.3,
+                  foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+                },
+                {
+                  nama: "Siti Aminah, S.E.",
+                  suara: 980,
+                  persentase: 20.2,
+                  foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+                },
+                {
+                  nama: "Budi Santoso",
+                  suara: 600,
+                  persentase: 12.4,
+                  foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+                },
+              ],
+            };
+            renderUI(mockResponse);
+          });
+      }
+
+      // Membagi fungsi render agar kode lebih Clean, Modular, dan Terstruktur
+      function renderUI(res) {
+        localDataCache = res.kandidat;
+
+        document.getElementById("home-total-suara").innerText =
+          res.totalSah.toLocaleString("id-ID");
+
+        myChart.data.labels = res.kandidat.map((k) => k.nama);
+
+        // Animasi inisial yang spektakuler saat data pertama kali dimuat
+        myChart.data.datasets[0].data = res.kandidat.map(() => 0);
+        myChart.update("none");
+
+        setTimeout(() => {
+          myChart.data.datasets[0].data = res.kandidat.map((k) => k.persentase);
+          myChart.update();
+        }, 150);
+
+        let listHtml = "";
+        let photoHtml = "";
+        let visiMisiHtml = "";
+
+        const visiMisiData = [
+          "Mewujudkan Desa Cibuntu yang unggul melalui digitalisasi pelayanan publik, transparansi anggaran, serta optimalisasi program pemberdayaan ekonomi karang taruna dan kelompok tani.",
+          "Meningkatkan kualitas infrastruktur jalan desa, memperkuat sinergitas pemuka agama, serta mengedepankan pelayanan kesehatan gratis terintegrasi untuk lansia dan balita.",
+          "Mewujudkan tata kelola pemerintahan desa yang bersih, berwibawa, responsif terhadap keluhan warga, serta memperluas lapangan kerja lokal melalui kemitraan UMKM desa.",
+          "Berkomitmen melestarikan nilai adat budaya lokal, meningkatkan kualitas sarana pendidikan keagamaan, serta mewujudkan keadilan sosial bagi seluruh lapisan masyarakat Cibuntu.",
+        ];
+
+        res.kandidat.forEach((k, index) => {
+          const colors = [
+            "bg-blue-500",
+            "bg-emerald-500",
+            "bg-amber-500",
+            "bg-pink-500",
+          ];
+          const textColors = [
+            "text-blue-400",
+            "text-emerald-400",
+            "text-amber-400",
+            "text-pink-400",
+          ];
+          const visiTeks =
+            visiMisiData[index] ||
+            "Berkomitmen penuh mengabdi demi kemaslahatan, keterbukaan, dan kemajuan bersama warga masyarakat Desa Cibuntu.";
+
+          listHtml += `
+                    <div class="card-gofood p-4 md:p-6 flex justify-between items-center bg-white/[0.01] w-full animate-up">
+                        <div class="flex items-center gap-3 md:gap-5 min-w-0">
+                            <div class="w-8 h-8 md:w-12 md:h-12 ${colors[index]} rounded-lg md:rounded-xl flex items-center justify-center font-extrabold text-sm md:text-lg text-white shadow-md">${index + 1}</div>
+                            <span class="font-bold text-sm md:text-lg text-white truncate max-w-[140px] md:max-w-full">${k.nama}</span>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-lg md:text-2xl font-black ${textColors[index]}">${k.persentase.toFixed(1)}%</div>
+                            <div class="text-slate-500 text-[10px] md:text-sm mt-0.5">${k.suara.toLocaleString("id-ID")} Suara</div>
+                        </div>
+                    </div>`;
+
+          photoHtml += `
+                    <div onclick="openModal(${index}, '${visiTeks.replace(/'/g, "\\'")}')" class="card-gofood p-4 md:p-6 text-center cursor-pointer hover:bg-white/5 transition-all bg-white/[0.01] flex flex-col justify-center h-full w-full animate-up">
+                        <div class="relative w-20 h-20 md:w-32 md:h-32 mx-auto mb-4">
+                            <img src="${k.foto}" class="w-full h-full object-cover rounded-2xl md:rounded-3xl border border-white/10 shadow-lg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                            <div class="absolute -bottom-2 -right-2 w-7 h-7 md:w-10 md:h-10 ${colors[index]} rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs md:text-base text-white shadow-lg">
+                                ${index + 1}
+                            </div>
+                        </div>
+                        <h4 class="text-sm md:text-lg font-bold text-white truncate px-1 mt-2">${k.nama}</h4>
+                        <p class="${textColors[index]} font-black text-sm md:text-xl mt-1">${k.persentase.toFixed(1)}%</p>
+                        <span class="text-[10px] md:text-xs text-blue-400 bg-blue-500/10 px-3 py-1.5 md:py-2 rounded-lg border border-blue-500/20 inline-block mt-4 hover:bg-blue-500/20 transition-colors">Lihat Profil</span>
+                    </div>`;
+
+          visiMisiHtml += `
+                    <div class="card-gofood p-5 md:p-8 bg-white/[0.01] flex flex-col h-full w-full animate-up">
+                        <div class="flex items-center gap-3 pb-3 md:pb-4 border-b border-white/5 mb-3 md:mb-5">
+                            <div class="w-8 h-8 md:w-10 md:h-10 ${colors[index]} rounded-lg md:rounded-xl font-bold text-sm md:text-base text-white flex items-center justify-center shadow-md">${index + 1}</div>
+                            <h4 class="text-sm md:text-xl font-bold text-white">${k.nama}</h4>
+                        </div>
+                        <div class="text-xs md:text-base text-slate-300 leading-relaxed bg-black/30 p-4 md:p-6 rounded-2xl border border-white/5 flex-grow">
+                            <p class="text-white font-bold text-[10px] md:text-xs uppercase tracking-wider mb-2 md:mb-3 ${textColors[index]}">Visi & Misi Calon:</p>
+                            "${visiTeks}"
+                        </div>
+                    </div>`;
+        });
+
+        document.getElementById("candidate-list").innerHTML = listHtml;
+        document.getElementById("photo-grid").innerHTML = photoHtml;
+        document.getElementById("visi-misi-container").innerHTML = visiMisiHtml;
+      }
+
+      // Penanganan Modal Profil Calon
+      function openModal(index, visiTeks) {
+        const kandidat = localDataCache[index];
+        if (!kandidat) return;
+
+        document.getElementById("modal-img").src = kandidat.foto;
+        document.getElementById("modal-nama").innerText = kandidat.nama;
+        document.getElementById("modal-no").innerText =
+          `Kandidat Nomor Urut 0${index + 1}`;
+        document.getElementById("modal-visi-teks").innerText = `"${visiTeks}"`;
+
+        const modal = document.getElementById("profile-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        setTimeout(
+          () => modal.firstElementChild.classList.remove("scale-95"),
+          10,
         );
       }
 
-      const container = document.getElementById("root");
-      const root = ReactDOM.createRoot(container);
-      root.render(<App />);
+      function closeModal() {
+        const modal = document.getElementById("profile-modal");
+        modal.firstElementChild.classList.add("scale-95");
+        setTimeout(() => {
+          modal.classList.remove("flex");
+          modal.classList.add("hidden");
+        }, 200);
+      }
+
+      // Penanganan Modal Informasi Bantuan Kustom
+      function showInfoModal(text) {
+        document.getElementById("info-modal-text").innerText = text;
+        const modal = document.getElementById("info-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        setTimeout(
+          () => modal.firstElementChild.classList.remove("scale-95"),
+          10,
+        );
+      }
+
+      function closeInfoModal() {
+        const modal = document.getElementById("info-modal");
+        modal.firstElementChild.classList.add("scale-95");
+        setTimeout(() => {
+          modal.classList.remove("flex");
+          modal.classList.add("hidden");
+        }, 200);
+      }
+
+      window.onload = () => {
+        initChart();
+        fetchData();
+      };
+
+      window.addEventListener("resize", () => {
+        if (myChart) {
+          const isDesktop = window.innerWidth >= 768;
+          myChart.options.scales.x.ticks.font.size = isDesktop ? 14 : 11;
+          myChart.options.scales.y.ticks.font.size = isDesktop ? 12 : 10;
+          myChart.data.datasets[0].barThickness = isDesktop ? 60 : 28;
+          myChart.update("none");
+        }
+      });
     </script>
   </body>
 </html>
